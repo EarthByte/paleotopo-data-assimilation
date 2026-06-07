@@ -1,0 +1,64 @@
+cff-version: 1.2.0
+title: >-
+  paleotopo-data-assimilation: an open framework for amplitude-corrected
+  Phanerozoic paleotopography
+message: >-
+  If you use this software or the corrected Scotese & Wright PaleoDEMs
+  produced by it, please cite both the methodology paper (Zhou, Müller &
+  Farahbakhsh, in review) and the underlying mohometry paper (Zhou,
+  Müller & Farahbakhsh, 2025).
+type: software
+authors:
+  - family-names: Zhou
+    given-names: Jianping
+    affiliation: EarthByte Group, School of Geosciences, The University of Sydney
+  - family-names: Müller
+    given-names: R. Dietmar
+    orcid: 'https://orcid.org/0000-0002-3334-5764'
+    affiliation: EarthByte Group, School of Geosciences, The University of Sydney
+  - family-names: Farahbakhsh
+    given-names: Ehsan
+    affiliation: EarthByte Group, School of Geosciences, The University of Sydney
+repository-code: 'https://github.com/EarthByte/paleotopo-data-assimilation'
+license: Apache-2.0
+keywords:
+  - paleotopography
+  - paleogeography
+  - data assimilation
+  - crustal thickness
+  - geochemistry
+  - plate tectonics
+  - Phanerozoic
+  - Scotese & Wright
+  - Earth-Science Reviews
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Zhou
+      given-names: Jianping
+    - family-names: Müller
+      given-names: R. Dietmar
+    - family-names: Farahbakhsh
+      given-names: Ehsan
+  title: >-
+    Assimilating crustal-thickness-derived elevations into PaleoDEMs:
+    an open framework for amplitude-corrected Phanerozoic paleotopography
+  journal: Earth-Science Reviews
+  year: 2026
+  status: in-review
+references:
+  - type: article
+    title: >-
+      Machine Learning and Big Data Mining Reveal Earth's Deep Time
+      Crustal Thickness and Tectonic Evolution: A New Chemical
+      Mohometry Approach
+    authors:
+      - family-names: Zhou
+        given-names: Jianping
+      - family-names: Müller
+        given-names: R. Dietmar
+      - family-names: Farahbakhsh
+        given-names: Ehsan
+    journal: Journal of Geophysical Research: Solid Earth
+    year: 2025
+    doi: 10.1029/2024JB030404

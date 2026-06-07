@@ -1,0 +1,56 @@
+# --- input data (large, distributed separately via Zenodo — see data/README.md) ---
+data/Scotese_Wright_2018_PaleoDEMs/
+data/Scotese_Wright_plate_model/
+data/geochem/*
+!data/geochem/README.md
+
+# --- run-time outputs (regenerable from inputs) ---
+# Figures/ holds the publication-ready PNG/PDF set and IS part of the
+# public release — left out of this exclude list.
+data/corrected/
+outputs/
+
+# Cached plate-ID arrays (re-computed on first run)
+*sample_plate_ids*.npy
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+.virtual_documents/
+
+# --- Editor / OS ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# --- log files from long-running pipelines ---
+pipeline*.log
+nohup.out
+
+# --- paper-build intermediates (Word/pandoc occasionally creates temp files) ---
+~$*.docx
+*.aux
+*.toc
