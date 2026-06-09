@@ -10,7 +10,7 @@
 
 This repository implements the methodology described in:
 
-> Zhou, J., Müller, R. D. & Farahbakhsh, E. (in review).  *Assimilating
+> Zhou, J., Müller, R. D. & Farahbakhsh, E. (in prep).  *Assimilating
 > crustal-thickness-derived elevations into PaleoDEMs: an open framework
 > for amplitude-corrected Phanerozoic paleotopography.*  Earth-Science
 > Reviews.
