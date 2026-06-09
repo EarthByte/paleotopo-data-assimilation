@@ -159,6 +159,62 @@ Plus global attributes documenting the run configuration.
 
 ---
 
+## Optional: dynamic-topography composition test
+
+A supplementary analysis (paper Supp Mat §S.1) composes the
+geochem-corrected paleotopography with the Young et al. (2022) GLD428
+dynamic-topography model across 50–300 Ma.  Scripts:
+
+| Script | Output |
+|---|---|
+| `scripts/build_dyntopo_diff_correction.py` | `<age>Ma_corrected_plus_dyntopo_diff_young_SW.nc` — corrected + plate-frame dyntopo time-difference rotated to Scotese paleomag frame |
+| `scripts/make_dyntopo_panels_figure.py` | Supp Fig S1 — six-panel mantle-flow correction overview |
+| `scripts/make_comparison_figures_dyntopo.py` | Supp Fig S2 — three Fig 5-style 2 × 3 comparisons at (300 \| 250), (200 \| 150), (100 \| 50) Ma |
+| `scripts/make_flooded_fraction_figure.py` | Supp Fig S3 — continental flooding through time |
+| `scripts/make_continent_elevation_figure.py` | Supp Fig S4 — per-continent mean elevation through time |
+| `scripts/render_corrected_plus_dyntopo_video.py` | cartopy / Robinson preview MP4s of the composed field |
+
+### Data — Young et al. (2022) dynamic topography grids
+
+Download the GLD428 grids from EarthByte (University of Sydney):
+
+| Release | URL | Files |
+|---|---|---|
+| 5-Myr cadence, 0–250 Ma | [`/Dynamic_Topography/gld428/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428/) | `gld428-PlateFrame-0-250Ma.zip` (48 MB), `gld428-MantleFrame-0-250Ma.zip` (67 MB) |
+| 20-Myr cadence (Merdith21 plate model), 0–1000 Ma | [`/Dynamic_Topography/gld428_m21/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428_m21/) | `gld428_plate_frame_grids.zip` (88 MB), `gld428_mantle_frame_grids.zip` (46 MB) |
+
+`build_dyntopo_diff_correction.py` reads the plate-frame grids; the
+optional upstream `rotate_young_dyntopo_to_scotese.py` reads the
+mantle-frame grids.  Unzip into a sibling-of-this-repo directory:
+
+```
+<your-data-root>/
+├── Young2022_gld428_grids_5Myr/         # from gld428-PlateFrame-0-250Ma.zip
+├── Young2022_gld428_grids_20Myr/        # from gld428_plate_frame_grids.zip
+└── …
+```
+
+Point the scripts at it via either an environment variable or a CLI flag:
+
+```bash
+# Option A — environment variable:
+export NEUROLEM_DATA_ROOT=/path/to/your-data-root
+
+# Option B — per-invocation CLI flag:
+python scripts/build_dyntopo_diff_correction.py \
+    --young-dir /path/to/your-data-root/Young2022_gld428_grids_20Myr \
+    --source young --ages 50 100 150 200 250 300
+```
+
+Cite the data as:
+
+> Young, A., Flament, N., Williams, S. E., Merdith, A., Cao, X., &
+> Müller, R. D. (2022). Long-term Phanerozoic sea level change from
+> solid Earth processes. *Earth and Planetary Science Letters*, **584**,
+> 117451.
+
+---
+
 ## Default pipeline configuration
 
 All knobs live at the top of `scripts/assimilate_scotese.py` and can be
