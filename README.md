@@ -194,13 +194,9 @@ mantle-frame grids.  Unzip into a sibling-of-this-repo directory:
 └── …
 ```
 
-Point the scripts at it via either an environment variable or a CLI flag:
+Point the scripts at it via a CLI flag:
 
 ```bash
-# Option A — environment variable:
-export NEUROLEM_DATA_ROOT=/path/to/your-data-root
-
-# Option B — per-invocation CLI flag:
 python scripts/build_dyntopo_diff_correction.py \
     --young-dir /path/to/your-data-root/Young2022_gld428_grids_20Myr \
     --source young --ages 50 100 150 200 250 300
@@ -215,7 +211,7 @@ Cite the data as:
 
 ---
 
-## Default pipeline configuration
+## Default workflow configuration
 
 All knobs live at the top of `scripts/assimilate_scotese.py` and can be
 tuned without code changes elsewhere.  The defaults below are the
