@@ -14,7 +14,7 @@ the assimilation:
   (d) Per-province declustered sample counts, stratified by era.
 
 OUTPUT
-    Figures/Fig02_sample_distribution.png
+    paper/Scotese/Fig02_sample_distribution.png
 
 USAGE
     cd <project>/scripts_Scotese
@@ -37,7 +37,7 @@ sys.path.insert(0, str(HERE))
 from paths_scotese import CSV_PATH
 
 PROJECT_ROOT = HERE.parent
-FIG_DIR = PROJECT_ROOT / "Figures"
+FIG_DIR = PROJECT_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 

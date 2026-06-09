@@ -19,8 +19,8 @@ declustered sample count) and produces a comparison figure suitable
 for the paper supplementary.
 
 OUTPUTS
-    data/corrected/sensitivity_refinements.csv
-    Figures/Fig10_sensitivity_refinements.png
+    data/corrected_Scotese/sensitivity_refinements.csv
+    paper/Scotese/Fig10_sensitivity_refinements.png
 
 USAGE
     cd <project>/scripts_Scotese
@@ -44,7 +44,7 @@ sys.path.insert(0, str(HERE))
 import assimilate_scotese as A
 from paths_scotese import CORRECTED_DIR
 PROJ_ROOT = HERE.parent
-FIG_DIR = PROJ_ROOT / "Figures"
+FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
