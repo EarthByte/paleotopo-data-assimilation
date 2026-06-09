@@ -15,7 +15,7 @@ DEFINITION
     a secondary series at 2000 m is also plotted as a faint reference.
 
 OUTPUT
-    Figures/Fig08_supermountains_index.png
+    paper/Scotese/Fig08_supermountains_index.png
 
 ANNOTATIONS
     Three classical supermountain epochs labelled on the time series:
@@ -42,7 +42,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from paths_scotese import CORRECTED_DIR
 PROJECT_ROOT = HERE.parent
-FIG_DIR = PROJECT_ROOT / "Figures"
+FIG_DIR = PROJECT_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configuration
@@ -105,7 +105,7 @@ def main():
     print("Building supermountains time series …")
     df_3km = build_timeseries(THRESHOLD_PRIMARY)
     df_2km = build_timeseries(THRESHOLD_SECONDARY)
-    out_csv = FIG_DIR.parent.parent / "data" / "corrected" / "supermountains_index.csv"
+    out_csv = FIG_DIR.parent.parent / "data" / "corrected_Scotese" / "supermountains_index.csv"
     df_3km.merge(df_2km.rename(columns={"S_t": "S_t_2km"})[["t_Ma","S_t_2km"]],
                  on="t_Ma").to_csv(out_csv, index=False)
     print(f"  wrote {out_csv}")

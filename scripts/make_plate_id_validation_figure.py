@@ -16,7 +16,7 @@ reconstruction step:
       with a 25% warning threshold.
 
 OUTPUT
-    Figures/Fig04_plate_id_validation.png
+    paper/Scotese/Fig04_plate_id_validation.png
 =============================================================================
 """
 from __future__ import annotations
@@ -38,7 +38,7 @@ import assimilate_scotese as A
 from sample_reconstruct_scotese import ScoteseSampleReconstructor
 
 PROJ_ROOT = HERE.parent
-FIG_DIR = PROJ_ROOT / "Figures"
+FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 

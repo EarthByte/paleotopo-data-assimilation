@@ -1,11 +1,11 @@
 """
 =============================================================================
-paths_scotese.py  —  Shared path configuration
+paths_scotese.py  —  Shared path configuration (Scotese & Wright workflow)
 =============================================================================
 
 Edit this one file (or set the matching environment variables) to relocate
-any of the I/O destinations.  The other scripts import these constants
-instead of hardcoding paths.
+any of the I/O destinations.  The other Scotese scripts import these
+constants instead of hardcoding paths.
 
 Inputs:
   - DEM_DIR     : Scotese & Wright 2018 PaleoDEM NetCDFs (5 Myr cadence)
@@ -18,26 +18,33 @@ Inputs:
 Outputs:
   - CORRECTED_DIR : per-Ma corrected NetCDFs + summary CSVs
   - OUTPUT_DIR    : videos and diagnostic figures
-  - DOCS_DIR      : project docs
+  - DOCS_DIR      : Scotese-specific docs
 
-Default project root is the parent of scripts/.  Override with the env
-var PALEOTOPO_PROJECT_ROOT if you've moved the project.
+Default project root is the parent of scripts_Scotese/.  Override with
+the env var PALEOTOPO_PROJECT_ROOT if you've moved the project.
 =============================================================================
 """
 from __future__ import annotations
 import os
 from pathlib import Path
 
-# Project root: <PROJECT_ROOT>/scripts/paths_scotese.py
+# Project root: <PROJECT_ROOT>/scripts_Scotese/paths_scotese.py
 PROJECT_ROOT = Path(os.environ.get(
     "PALEOTOPO_PROJECT_ROOT",
     str(Path(__file__).resolve().parent.parent),
 ))
 
-# ---------- inputs ----------
-DEM_DIR   = PROJECT_ROOT / "data" / "Scotese_Wright_2018_PaleoDEMs"
-PLATE_DIR = PROJECT_ROOT / "data" / "Scotese_Wright_plate_model"
-CSV_PATH  = (PROJECT_ROOT / "data" / "geochem" /
+# Sanity fallback when running inside a session VM whose mount path differs.
+if not PROJECT_ROOT.exists():
+    _candidates = list(Path("/sessions").glob("*/mnt/Paleotopo_data_assimilation"))
+    if _candidates:
+        PROJECT_ROOT = _candidates[0]
+
+# ---------- inputs (live inside this project, alongside the Merdith data) ----------
+DEM_DIR   = PROJECT_ROOT / "data" / "Scotese_Wright_2018_Maps_1-88_1degX1deg_PaleoDEMS_nc_v2"
+PLATE_DIR = PROJECT_ROOT / "data" / "Scotese_Wright_plate_model_revised"
+CSV_PATH  = (PROJECT_ROOT / "data" / "inputs" /
+             "crustal_thickness_topography" /
              "Global_crustal_thickness_with_paleo_coords.csv")
 
 # S&W-specific plate model file names
@@ -62,8 +69,8 @@ CONTINENTAL_POLYGONS_FILE = next(
 )
 
 # ---------- outputs ----------
-CORRECTED_DIR = PROJECT_ROOT / "data" / "corrected"
-OUTPUT_DIR    = PROJECT_ROOT / "outputs"
+CORRECTED_DIR = PROJECT_ROOT / "data" / "corrected_Scotese"
+OUTPUT_DIR    = PROJECT_ROOT / "outputs_Scotese"
 DOCS_DIR      = PROJECT_ROOT / "docs"
 
 

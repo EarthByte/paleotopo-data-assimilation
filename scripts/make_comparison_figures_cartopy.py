@@ -31,7 +31,7 @@ pseudocylindrical to Winkel-Tripel available without GMT).  Fixed cpt:
     elevation  : terrain, −4000 … +4000 m, end-extension arrows
     Δz         : RdBu_r,  ±2000 m, end-extension arrows
 
-OUTPUT  (Figures/)
+OUTPUT  (paper/Scotese/)
     Fig05a_SW_comparison_500-400Ma.png
     Fig05b_SW_comparison_300-200Ma.png
     Fig05c_SW_comparison_100-50Ma.png
@@ -57,11 +57,11 @@ from paths_scotese import CORRECTED_DIR
 import assimilate_scotese as A
 from sw_io import nearest_cell_index
 PROJ_ROOT = HERE.parent
-# Paper-numbered output goes to Figures/.  The pyGMT version of the
+# Paper-numbered output goes to paper/Scotese/.  The pyGMT version of the
 # same figure (make_comparison_figures.py) writes its own Fig05a/b/c PNGs
-# straight to Figures/ via the build script — keeping these here too
+# straight to paper/Scotese/ via the build script — keeping these here too
 # means either renderer leaves the figures in their final home.
-FIG_DIR = PROJ_ROOT / "Figures"
+FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 ELEV_NORM = mcolors.TwoSlopeNorm(vmin=-4000, vcenter=0, vmax=4000)
@@ -246,7 +246,7 @@ def make_one(age_L, age_R, basename):
 def main():
     for age_L, age_R, basename in PAIRS:
         make_one(age_L, age_R, basename)
-    print("\nDone.  Three figures in Figures/.")
+    print("\nDone.  Three figures in paper/Scotese/.")
 
 
 if __name__ == "__main__":

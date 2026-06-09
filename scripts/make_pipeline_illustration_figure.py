@@ -18,7 +18,7 @@ All panels in Robinson projection.  Elevation cpt: terrain, −5..+5 km.
 Δz cpt: RdBu_r, ±2 km.  Province cmap: tab10.
 
 OUTPUT
-    Figures/Fig03_pipeline_illustration_100Ma.png
+    paper/Scotese/Fig03_pipeline_illustration_100Ma.png
 
 USAGE
     cd <project>/scripts
@@ -46,9 +46,9 @@ from plate_model_utils_scotese import (
 )
 
 PROJ_ROOT = HERE.parent
-# Paper-numbered output: land directly in Figures/, matching the
+# Paper-numbered output: land directly in paper/Scotese/, matching the
 # convention used by the other Fig0X scripts in this directory.
-FIG_DIR = PROJ_ROOT / "Figures"
+FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 AGE = 100

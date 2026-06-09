@@ -19,8 +19,8 @@ USAGE
     python diagnose_correction_distances.py 50 100 200  # a subset
 
 OUTPUTS
-    data/corrected/correction_distance_diag.csv
-    outputs/figures/correction_distance_diag.png
+    data/corrected_Scotese/correction_distance_diag.csv
+    outputs_Scotese/figures/correction_distance_diag.png
 """
 from __future__ import annotations
 import sys, argparse

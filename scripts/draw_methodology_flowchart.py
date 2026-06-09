@@ -24,9 +24,9 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from paths_scotese import OUTPUT_DIR, PROJECT_ROOT
 
-# The paper-numbered figure lives in Figures/.  We also drop a copy
+# The paper-numbered figure lives in paper/Scotese/.  We also drop a copy
 # in OUTPUT_DIR for convenience when iterating on the flowchart layout.
-FIG_DIR = PROJECT_ROOT / "Figures"
+FIG_DIR = PROJECT_ROOT / "paper" / "Scotese"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -246,7 +246,7 @@ ax.text(0.5, 0.02,
         ha="center", fontsize=8.5, style="italic", color="#444")
 
 plt.tight_layout()
-# Publication-named output goes straight into Figures/, mirroring
+# Publication-named output goes straight into paper/Scotese/, mirroring
 # the convention used by make_sample_distribution_figure.py and friends.
 out_png  = FIG_DIR    / "Fig01_methodology_flowchart.png"
 mirror   = OUTPUT_DIR / "methodology_flowchart.png"

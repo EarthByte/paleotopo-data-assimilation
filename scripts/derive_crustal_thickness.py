@@ -54,7 +54,7 @@ OUTPUTS
         z_c       (f4)   crustal thickness in km (NaN over ocean)
         h_m       (f4)   M_corrected echoed back (m) for traceability
         continent_mask   (i1)
-    Figures/Fig11_derived_crustal_thickness.png   (--figure only)
+    paper/Scotese/Fig11_derived_crustal_thickness.png   (--figure only)
 =============================================================================
 """
 from __future__ import annotations
@@ -228,7 +228,7 @@ def make_preview_figure(ages=(50, 100, 200, 300, 400, 500)):
     fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.10,
                         hspace=0.18, wspace=0.05)
 
-    out_dir = OUTPUT_DIR.parent / "Figures"
+    out_dir = OUTPUT_DIR.parent / "paper" / "Scotese"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_png = out_dir / "Fig11_derived_crustal_thickness.png"
     fig.savefig(out_png, dpi=180, bbox_inches="tight")
@@ -249,7 +249,7 @@ def main():
                    help="process every corrected NetCDF in data/corrected/")
     p.add_argument("--figure", action="store_true",
                    help="also build the 6-panel preview figure "
-                        "(Figures/Fig11_derived_crustal_thickness.png)")
+                        "(paper/Scotese/Fig11_derived_crustal_thickness.png)")
     p.add_argument("--ages", type=int, nargs="+",
                    help="figure-only: choose your own six ages "
                         "(default: 50 100 200 300 400 500)")
