@@ -10,9 +10,7 @@
 
 This repository implements the methodology described in:
 
-> Zhou, J., Müller, R. D. & Farahbakhsh, E. (in prep).  *Assimilating
-> crustal-thickness-derived elevations into PaleoDEMs: an open framework
-> for amplitude-corrected Phanerozoic paleotopography.*  Earth-Science
+> Zhou, J., Müller, R. D. & Farahbakhsh, E. (in prep).  *From qualitative to data-assimilated paleotopography: an open framework for amplitude-corrected Phanerozoic elevation models.*  Earth-Science
 > Reviews.
 
 The kinematic Scotese & Wright (2018) PaleoDEMs (S&W18) have a reasonable
@@ -301,9 +299,7 @@ If you use this code or the corrected grids, please cite both:
 
 1. **The methodology paper** (this repository's reference):
 
-   > Zhou, J., Müller, R. D. & Farahbakhsh, E. (in review). *Assimilating
-   > crustal-thickness-derived elevations into PaleoDEMs: an open
-   > framework for amplitude-corrected Phanerozoic paleotopography.*
+   > Zhou, J., Müller, R. D. & Farahbakhsh, E. (in review). *From qualitative to data-assimilated paleotopography: an open framework for amplitude-corrected Phanerozoic elevation models.*
    > Earth-Science Reviews.
 
 2. **The underlying mohometry**:
