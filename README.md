@@ -22,10 +22,10 @@ top 1 % of land is at ~2 km versus Earth's modern ~4 km.  This workflow
 ingests ~67 000 geochemically-derived paleo-elevation samples and
 updates the S&W18 grids on a slice-by-slice basis, recovering an
 Earth-modern-like hypsometric envelope while preserving the kinematic
-spatial pattern.
+spatial pattern. The method builds on this paper:
+Zhou, J, Farahbakhsh, E., ..., Müller, R.D., 2026. Recurrent super highlands since 2.1 Ga reveal rhythmic coupling between deep Earth and surface evolution. Geology. https://doi.org/https://doi.org/10.1130/G54718.1
 
-The method builds on this paper:
-Zhou, J, Farahbakhsh, E., ..., Müller, R.D., 2026. Recurrent super highlands since 2.1 Ga reveal rhythmic coupling between deep Earth and surface evolution. Geology. https://doi.org/https://doi.org/10.1130/G54718.1******
+
 ---
 
 ## Highlights
