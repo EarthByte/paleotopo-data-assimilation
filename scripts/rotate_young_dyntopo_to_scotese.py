@@ -52,7 +52,7 @@ Usage
 -----
 
   # production path: 5-Myr native source, rotate at each age
-  python src/neurolem/cu_provenance/rotate_young_dyntopo_to_scotese.py \\
+  python scripts_Scotese/rotate_young_dyntopo_to_scotese.py \\
       --src-5myr data/Young2022_gld428_grids_5Myr \\
       --dst data/Young2022_gld428_grids_5Myr_scotese_frame \\
       --muller2022-dir data/Muller_etal_2022_SE_1Ga_Opt_PlateMotionModel_v1.2.4 \\

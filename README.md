@@ -10,7 +10,9 @@
 
 This repository implements the methodology described in:
 
-> Zhou, J., Müller, R. D. & Farahbakhsh, E. (in prep).  *From qualitative to data-assimilated paleotopography: an open framework for amplitude-corrected Phanerozoic elevation models.*  Earth-Science
+> Zhou, J., Müller, R. D. & Farahbakhsh, E. (in prep).  *Assimilating
+> crustal-thickness-derived elevations into PaleoDEMs: an open framework
+> for amplitude-corrected Phanerozoic paleotopography.*  Earth-Science
 > Reviews.
 
 The kinematic Scotese & Wright (2018) PaleoDEMs (S&W18) have a reasonable
@@ -178,28 +180,32 @@ Download the GLD428 grids from EarthByte (University of Sydney):
 
 | Release | URL | Files |
 |---|---|---|
-| 5-Myr cadence, 0–250 Ma (Merdith2021 plate model) | [`/Dynamic_Topography/gld428/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428/) | `gld428-PlateFrame-0-250Ma.zip` (48 MB), `gld428-MantleFrame-0-250Ma.zip` (67 MB) |
-| 20-Myr cadence (Merdith2021 plate model), 0–540 Ma | [`/Dynamic_Topography/gld428_m21/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428_m21/) | `gld428_plate_frame_grids.zip` (88 MB), `gld428_mantle_frame_grids.zip` (46 MB) |
-
-The dynamic topography models can be interactively visualised via the GPlates Portal dynamic topography page, under "Young et al., 2022)": https://portal.gplates.org/portal/dt/
+| 5-Myr cadence, 0–250 Ma | [`/Dynamic_Topography/gld428/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428/) | `gld428-PlateFrame-0-250Ma.zip` (48 MB), `gld428-MantleFrame-0-250Ma.zip` (67 MB) |
+| 20-Myr cadence (Merdith21 plate model), 0–1000 Ma | [`/Dynamic_Topography/gld428_m21/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428_m21/) | `gld428_plate_frame_grids.zip` (88 MB), `gld428_mantle_frame_grids.zip` (46 MB) |
 
 `build_dyntopo_diff_correction.py` reads the plate-frame grids; the
 optional upstream `rotate_young_dyntopo_to_scotese.py` reads the
-mantle-frame grids.  Unzip into a sibling-of-this-repo directory:
+mantle-frame grids.  Unzip directly into the project's `data/` directory:
 
 ```
-<your-data-root>/
+data/
 ├── Young2022_gld428_grids_5Myr/         # from gld428-PlateFrame-0-250Ma.zip
 ├── Young2022_gld428_grids_20Myr/        # from gld428_plate_frame_grids.zip
 └── …
 ```
 
-Point the scripts at it via a CLI flag:
+That layout is the default the scripts expect — no further configuration
+needed.  If you'd rather keep the grids somewhere else, override at run
+time:
 
 ```bash
+# Option A — environment variable (points at a parent data dir):
+export PALEOTOPO_DATA_ROOT=/path/to/your-data-root
+
+# Option B — per-invocation CLI flag:
 python scripts/build_dyntopo_diff_correction.py \
-    --young-dir /path/to/your-data-root/Young2022_gld428_grids_20Myr \
-    --source young --ages 50 100 150 200 250 300
+    --young-dir /path/to/Young2022_gld428_grids_20Myr \
+    --source young --ages $(seq 0 5 300) --step-myr 5
 ```
 
 Cite the data as:
@@ -211,7 +217,7 @@ Cite the data as:
 
 ---
 
-## Default workflow configuration
+## Default pipeline configuration
 
 All knobs live at the top of `scripts/assimilate_scotese.py` and can be
 tuned without code changes elsewhere.  The defaults below are the
@@ -297,7 +303,9 @@ If you use this code or the corrected grids, please cite both:
 
 1. **The methodology paper** (this repository's reference):
 
-   > Zhou, J., Müller, R. D. & Farahbakhsh, E. (in review). *From qualitative to data-assimilated paleotopography: an open framework for amplitude-corrected Phanerozoic elevation models.*
+   > Zhou, J., Müller, R. D. & Farahbakhsh, E. (in review). *Assimilating
+   > crustal-thickness-derived elevations into PaleoDEMs: an open
+   > framework for amplitude-corrected Phanerozoic paleotopography.*
    > Earth-Science Reviews.
 
 2. **The underlying mohometry**:

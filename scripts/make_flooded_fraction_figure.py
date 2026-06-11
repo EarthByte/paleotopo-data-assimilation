@@ -2,7 +2,7 @@
 """
 =============================================================================
 make_flooded_fraction_figure.py  —  Continental flooding summary stats:
-                                    corrected vs corrected + dyntopo anomaly
+                                    corrected vs corrected + per-step dyntopo increment
 =============================================================================
 
 WHAT THIS DOES
@@ -12,13 +12,13 @@ WHAT THIS DOES
 
         (1) the geochem-corrected Scotese & Wright paleotopography
             `M_corrected` - the main-text result
-        (2) the same map with the Young 2022 dynamic-topography ANOMALY
+        (2) the same map with the Young 2022 dyntopo PER-STEP INCREMENT
             relative to present added on top
-            `M_combined = M_corrected + [z_dyntopo(t) - z_dyntopo(0)]`
+            `M_combined = M_corrected + [z_dyntopo(t) - z_dyntopo(t - Δt)]`
 
     Both percentages are plotted vs age on a simple xy line plot, so
-    the reader can see at a glance whether composing the dyntopo
-    anomaly into the corrected map drives continental flooding outside
+    the reader can see at a glance whether composing the per-step dyntopo increment into the corrected map drives
+    continental flooding outside
     the bounds of what's geologically reasonable (cf. Kocsis & Scotese,
     ESR, 2021).
 
@@ -168,7 +168,7 @@ def make_figure(ages: list[int], combined_dir: Path,
             label="Corrected (this study)")
     ax.plot(ages_arr, f_comb_arr,
             marker="s", color="#d62728", lw=1.8, ms=ms, ls="--",
-            label="Corrected + Young 2022 dyntopo anomaly")
+            label="Corrected + Young 2022 dyntopo per-step increment")
     # Plot direction: oldest on the left, youngest on the right
     ax.invert_xaxis()
     ax.set_xlabel("Age (Ma)", fontsize=12)
@@ -206,7 +206,7 @@ def make_figure(ages: list[int], combined_dir: Path,
             w = csv.writer(fh)
             w.writerow(["age_ma",
                         "pct_continent_flooded_corrected",
-                        "pct_continent_flooded_corrected_plus_dyntopo_anomaly",
+                        "pct_continent_flooded_corrected_plus_dyntopo_per_step_increment",
                         "delta_percentage_points"])
             for a, fc, fcb in rows:
                 w.writerow([a, f"{fc:.2f}", f"{fcb:.2f}", f"{fcb - fc:+.2f}"])

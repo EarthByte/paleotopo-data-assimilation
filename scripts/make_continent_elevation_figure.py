@@ -16,7 +16,7 @@ WHAT THIS DOES
 
     Output is a single xy plot with one color per continent, two line styles
     per continent:
-        solid line   — M_combined   (with dyntopo time-difference correction)
+        solid line   — M_combined   (with dyntopo per-step increment correction)
         dashed line  — M_corrected  (no dyntopo correction; baseline)
     Inset legend lists the continents.  An accompanying CSV records the
     same numbers slice-by-slice for traceability.

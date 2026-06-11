@@ -1,38 +1,48 @@
 """
 =============================================================================
-build_dyntopo_diff_correction.py  —  Dyntopo-difference paleotopography
-                                      correction (plate-frame time-difference)
+build_dyntopo_diff_correction.py  —  PER-STEP dyntopo increment correction
+                                      (plate-frame, paleomag-rotated)
 =============================================================================
 
-Builds <T>Ma_corrected_plus_dyntopo_diff_<source>_SW.nc files by adding the
-TIME-DIFFERENCE of plate-frame dynamic topography (Young 2022 OR Braz 2021)
-to the geochem-corrected Scotese & Wright paleo-DEM. The procedure addresses
-the methodological subtlety that present-day observed topography ALREADY
-contains today's dynamic topography, so the proper paleo correction is the
-difference dyntopo(T) − dyntopo(0) — evaluated in PLATE reference frame so
-each continental block is compared to itself across time — then cookie-cut
-and rotated into Scotese paleomag frame to match M_corrected.
+Builds <T>Ma_corrected_plus_dyntopo_diff_<source>_SW.nc files by adding a
+PER-STEP increment of plate-frame dynamic topography (Young 2022 OR
+Braz 2021) to the geochem-corrected Scotese & Wright paleo-DEM:
+
+    Δz(t)        = dyntopo(t) − dyntopo(t − Δt)   (Δt = --step-myr, default 5)
+    M_combined(t) = M_corrected(t) + Δz_paleomag(t)
+
+Each age t therefore inherits the dyntopo CONTRIBUTION to topographic change
+over the most recent Δt-Myr interval, NOT a cumulative-from-present
+correction.  The 0 Ma slice serves as a reference for the t = Δt step only;
+at every later step the reference SLIDES one step back (t = 10 Ma uses
+5 Ma; t = 15 uses 10; etc.).  At t = 0 the correction is identically zero
+by construction, so M_combined(0) = M_corrected(0) = observed topography.
+
+The intent is to visualise where mantle flow is most actively reshaping the
+surface at each frame — not to reconstruct what cumulative dyntopo applied
+on top of M_corrected would look like.
 
 WHY PLATE FRAME?  In mantle reference frame, continents move over time.
 Subtracting two mantle-frame dyntopo grids at the same lat/lon cell compares
 the dyntopo under different parts of different continents at different times
 — physically meaningless. In plate frame, every grid cell is rigidly attached
-to its continent, so dyntopo(T) − dyntopo(0) gives the time-change at that
-specific point on that specific continent.
+to its continent, so dyntopo(t) − dyntopo(t − Δt) gives the time-change at
+that specific point on that specific continent over the Δt interval.
 
 SIGN CONVENTION
-  dyntopo > 0  → surface is uplifted by mantle dynamics
-  diff = dyntopo(T) − dyntopo(0) > 0  → surface was HIGHER at T than today
-  paleo_topo(T) = present_topo + diff
-  ⇒ M_combined(T) = M_corrected(T) + diff_rotated_to_scotese_frame(T)
+  dyntopo > 0  → surface is uplifted by mantle dynamics at that cell
+  Δz(t) > 0    → that cell was uplifted (or experienced less subsidence)
+                  by mantle dynamics in the Δt interval ending at age t
+  ⇒ M_combined(t) = M_corrected(t)
+                    + [dyntopo(t) − dyntopo(t − Δt)] rotated to paleomag(t)
 
 INPUTS
   Young 2022 plate-frame grids:
-    NeuroLEM/data/Young2022_gld428_grids_20Myr/gld428_PlateFrameGrid<age>.nc
+    data/Young2022_gld428_grids_20Myr/gld428_PlateFrameGrid<age>.nc
     20-Myr cadence (0, 20, 40, ..., 980).  Variable: 'z' (or similar — sniffed).
 
   Braz 2021 gmcm9 plate-frame grids:
-    NeuroLEM/data/Braz_etal_2021-_dynatopo_and_rotations/gmcm9_plate_ref_frame_grids/
+    data/Braz_etal_2021-_dynatopo_and_rotations/gmcm9_plate_ref_frame_grids/
     <age>.00.nc  for 0, 4, 9, 14, 19, ..., 99 (5-Myr cadence, offset 1 Myr)
     plus 104, 109, ..., 150 Ma.
 
@@ -53,10 +63,10 @@ DEPENDENCIES
   gplately ≥ 1.0  (already in envi_gospl per task #2)
   pygplates ≥ 1.0
   netCDF4, xarray, numpy
-  neurolem.cu_provenance.netcdf_io (CF writer helper)
+  netcdf_io.py — CF writer helper (sibling file in this directory)
 
 USAGE
-  python src/neurolem/cu_provenance/build_dyntopo_diff_correction.py \\
+  python scripts_Scotese/build_dyntopo_diff_correction.py \\
       --source young \\
       --ages 5 15 35 55
 =============================================================================
@@ -78,23 +88,20 @@ from netcdf_io import write_cf_grid, git_describe
 # Resolve paleotopo root from this script's location (scripts_Scotese/.. → repo).
 PALEOTOPO_ROOT = HERE.parent
 
-# Where the external Young 2022 / Braz 2021 plate-frame dyntopo grids live.
-# Overrideable via env var NEUROLEM_DATA_ROOT or the --young-dir / --braz-dir
-# CLI flags.  Default points at the conventional layout that has NeuroLEM
-# sitting next to the paleotopo project on disk.  This script no longer
-# imports anything from the NeuroLEM Python package — only its data
-# directory is required.
-NEUROLEM_DATA_DEFAULT = Path(os.environ.get(
-    "NEUROLEM_DATA_ROOT",
-    str(PALEOTOPO_ROOT.parent / "NeuroLEM" / "data")))
+# Where the Young 2022 / Braz 2021 plate-frame dyntopo grids live.
+# Default points at the project's own data/ directory; override via
+# env var PALEOTOPO_DATA_ROOT or the --young-dir / --braz-dir CLI flags.
+DATA_ROOT = Path(os.environ.get(
+    "PALEOTOPO_DATA_ROOT",
+    str(PALEOTOPO_ROOT / "data")))
 
 
 # ---------------------------------------------------------------------------
 # Source-specific configuration
 # ---------------------------------------------------------------------------
 
-YOUNG_DIR = NEUROLEM_DATA_DEFAULT / "Young2022_gld428_grids_20Myr"
-BRAZ_DIR  = (NEUROLEM_DATA_DEFAULT / "Braz_etal_2021-_dynatopo_and_rotations"
+YOUNG_DIR = DATA_ROOT / "Young2022_gld428_grids_20Myr"
+BRAZ_DIR  = (DATA_ROOT / "Braz_etal_2021-_dynatopo_and_rotations"
              / "gmcm9_plate_ref_frame_grids")
 
 CORRECTED_DIR = PALEOTOPO_ROOT / "data" / "corrected_Scotese"
@@ -269,23 +276,50 @@ def cookie_cut_and_rotate(plate_frame: xr.DataArray, age_ma: float,
 
 def process_age(target_age_ma: int, source: str, *,
                 rot_file: Path, polygons_file: Path,
-                out_dir: Path, verbose: bool = True) -> Path:
-    if verbose:
-        print(f"\n=== {target_age_ma} Ma — dyntopo source: {source} ===")
+                out_dir: Path, step_myr: int = 5,
+                verbose: bool = True) -> Path:
+    """At age t, the dyntopo correction is the PER-STEP increment
 
-    # 1. dyntopo at T in plate frame (interpolated/snapped)
-    dyntopo_T, src_age_T = load_dyntopo_at_age(source, target_age_ma)
+        Δz(t) = z_dyntopo(t) − z_dyntopo(t − Δt),    Δt = `step_myr`
+
+    rather than the cumulative-from-present z(t) − z(0).  At t = 0 the
+    correction is identically zero by construction (no predecessor age),
+    so M_combined(0) = M_corrected(0) = observed topography.  The
+    reference age slides with t so that 0 Ma serves as a reference for
+    the t = Δt step only, never thereafter.
+    """
     if verbose:
-        print(f"  dyntopo({target_age_ma} Ma)  ← {source} source age {src_age_T} Ma")
-    # 2. dyntopo at 0 Ma in plate frame
-    dyntopo_0, src_age_0 = load_dyntopo_at_age(source, 0.0)
-    if verbose:
-        print(f"  dyntopo(0 Ma)               ← {source} source age {src_age_0} Ma")
-    # 3. difference in plate frame
-    diff_plate = dyntopo_T - dyntopo_0
-    if verbose:
-        print(f"  diff_plate range: [{float(diff_plate.min()):+.0f}, "
-              f"{float(diff_plate.max()):+.0f}] m")
+        print(f"\n=== {target_age_ma} Ma — dyntopo source: {source}, "
+              f"step Δt = {step_myr} Myr ===")
+
+    ref_age_ma = max(0, target_age_ma - step_myr)
+
+    if target_age_ma == 0:
+        # No predecessor — Δz is identically zero, M_combined ≡ M_corrected.
+        # Load M_corrected just so the downstream cookie-cut/rotate step has
+        # a target grid to project zeros onto.
+        M_corr_pre, _ = load_corrected_scotese(target_age_ma)
+        diff_plate = xr.zeros_like(M_corr_pre)
+        diff_plate.name = "z"
+        src_age_T = src_age_ref = 0
+        if verbose:
+            print("  t = 0: Δz set to zero by construction")
+    else:
+        # 1. dyntopo at t in plate frame
+        dyntopo_T, src_age_T = load_dyntopo_at_age(source, target_age_ma)
+        if verbose:
+            print(f"  dyntopo({target_age_ma} Ma)  ← {source} source age "
+                  f"{src_age_T} Ma")
+        # 2. dyntopo at t − Δt in plate frame (per-step reference, NOT 0 Ma)
+        dyntopo_ref, src_age_ref = load_dyntopo_at_age(source, float(ref_age_ma))
+        if verbose:
+            print(f"  dyntopo({ref_age_ma} Ma)  ← {source} source age "
+                  f"{src_age_ref} Ma  (Δt={step_myr} Myr reference)")
+        # 3. PER-STEP difference in plate frame: Δz = z(t) − z(t − Δt)
+        diff_plate = dyntopo_T - dyntopo_ref
+        if verbose:
+            print(f"  Δz_plate range: [{float(diff_plate.min()):+.0f}, "
+                  f"{float(diff_plate.max()):+.0f}] m")
 
     # 4-6. cookie-cut + rotate to Scotese paleomag frame
     if verbose:
@@ -335,8 +369,10 @@ def process_age(target_age_ma: int, source: str, *,
             }),
             "z_dyntopo_diff": (diff_scotese.values, {
                 "units": "m",
-                "long_name": f"Dyntopo difference dyntopo({target_age_ma} Ma) − dyntopo(0 Ma), "
-                             f"plate-frame-computed then cookie-cut + rotated to Scotese paleomag frame",
+                "long_name": f"Per-step dyntopo increment dyntopo({target_age_ma} Ma) − "
+                             f"dyntopo({ref_age_ma} Ma), Δt={target_age_ma - ref_age_ma} Myr, "
+                             f"plate-frame-computed then cookie-cut + rotated to "
+                             f"Scotese paleomag frame at {target_age_ma} Ma",
             }),
             "M_combined": (M_combined.values, {
                 "units": "m",
@@ -353,24 +389,28 @@ def process_age(target_age_ma: int, source: str, *,
                f"paleo-DEM, {target_age_ma} Ma"),
         summary=(f"1° global paleo-DEM with the Zhou et al. (2024) geochem-"
                  f"corrected Scotese & Wright (2018) DEM augmented by the "
-                 f"time-difference of {source.title()} dynamic topography "
-                 f"between {target_age_ma} Ma and present-day, evaluated in "
-                 f"plate reference frame and cookie-cut + rotated into "
+                 f"PER-STEP increment of {source.title()} dynamic topography "
+                 f"between {ref_age_ma} Ma and {target_age_ma} Ma, evaluated "
+                 f"in plate reference frame and cookie-cut + rotated into "
                  f"Scotese paleomag frame at {target_age_ma} Ma."),
-        comment=(f"Methodologically corrected dyntopo coupling: present-day "
-                 f"observed topography already contains today's dynamic "
-                 f"topography, so the paleo correction is the time-DIFFERENCE "
-                 f"dyntopo(T) − dyntopo(0), not the full past dyntopo. The "
-                 f"subtraction is meaningful only in plate reference frame "
-                 f"where each continental block is rigidly attached to itself; "
-                 f"the diff is then cookie-cut by Scotese 2023 continental "
-                 f"polygons and rotated to time-T paleomag frame via the "
-                 f"Scotese & Wright 2023 rotation model (gplately.Raster."
-                 f"reconstruct). Sea-level guard applied: where the dyntopo "
-                 f"correction would have pushed originally subaerial land "
-                 f"(M_orig > 0) below sea level, M_combined is clipped to "
-                 f"0 m, representing genuine dyntopo-driven coastal inundation. "
-                 f"Cells originally below sea level (M_orig ≤ 0) are unaffected."),
+        comment=(f"PER-STEP dyntopo coupling: at age t the correction added "
+                 f"to M_corrected is Δz(t) = dyntopo(t) − dyntopo(t − Δt), "
+                 f"NOT the cumulative-from-present dyntopo(t) − dyntopo(0). "
+                 f"At t = 0 the correction is identically zero by "
+                 f"construction (M_combined(0) = M_corrected(0) = observed "
+                 f"topography); the 0 Ma slice serves as a reference for the "
+                 f"t = Δt step only. The subtraction is meaningful only in "
+                 f"plate reference frame where each continental block is "
+                 f"rigidly attached to itself; the per-step Δz is then "
+                 f"cookie-cut by Scotese 2023 continental polygons and "
+                 f"rotated to time-t paleomag frame via the Scotese & "
+                 f"Wright 2023 rotation model (gplately.Raster.reconstruct). "
+                 f"Sea-level guard applied: where the dyntopo correction "
+                 f"would have pushed originally subaerial land (M_orig > 0) "
+                 f"below sea level, M_combined is clipped to 0 m, "
+                 f"representing genuine dyntopo-driven coastal inundation. "
+                 f"Cells originally below sea level (M_orig ≤ 0) are "
+                 f"unaffected."),
         source=source_str,
         references=("Scotese & Wright 2018 PaleoDEM (Zenodo 5460860); "
                     "Zhou et al. 2024 ESS geochem-assimilated correction; "
@@ -406,12 +446,17 @@ def main() -> int:
                     help="Override output directory. Default: "
                          "Paleotopo_data_assimilation/data/"
                          "corrected_Scotese_plus_dyntopo_diff_<source>/")
+    ap.add_argument("--step-myr", type=int, default=5,
+                    help="Δt in Myr — the per-step reference offset. At age "
+                         "t the correction added to M_corrected is "
+                         "dyntopo(t) − dyntopo(t − Δt), evaluated in plate "
+                         "frame. Default 5 Myr.")
     ap.add_argument("--rot-file", type=Path, default=SCOTESE_ROT_FILE)
     ap.add_argument("--polygons", type=Path, default=SCOTESE_POLYGONS)
     ap.add_argument("--young-dir", type=Path, default=YOUNG_DIR,
                     help=f"Override Young 2022 plate-frame grids directory. "
                          f"Default: {YOUNG_DIR}. Can also be set via the "
-                         f"NEUROLEM_DATA_ROOT environment variable.")
+                         f"PALEOTOPO_DATA_ROOT environment variable.")
     ap.add_argument("--braz-dir", type=Path, default=BRAZ_DIR,
                     help=f"Override Braz 2021 plate-frame grids directory. "
                          f"Default: {BRAZ_DIR}")
@@ -433,11 +478,13 @@ def main() -> int:
         print(f"dyntopo dir    : {BRAZ_DIR}")
     print(f"output dir     : {out_dir}")
 
+    print(f"step Δt        : {args.step_myr} Myr")
+
     for age in args.ages:
         try:
             process_age(int(age), args.source,
                         rot_file=args.rot_file, polygons_file=args.polygons,
-                        out_dir=out_dir)
+                        out_dir=out_dir, step_myr=args.step_myr)
         except Exception as e:  # noqa: BLE001
             import traceback; traceback.print_exc()
             print(f"FAILED {age} Ma: {type(e).__name__}: {e}")
