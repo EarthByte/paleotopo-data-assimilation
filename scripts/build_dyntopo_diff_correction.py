@@ -294,34 +294,36 @@ def process_age(target_age_ma: int, source: str, *,
 
     ref_age_ma = max(0, target_age_ma - step_myr)
 
+    # Always load the absolute past dyntopo in plate frame (at t = 0 too —
+    # the absolute field is just the present-day dyntopo).  This gives us
+    # `dyntopo_T` for both the per-step Δz computation AND for the
+    # z_dyntopo_paleomag absolute-dyntopo field we emit alongside Δz.
+    dyntopo_T, src_age_T = load_dyntopo_at_age(source, target_age_ma)
+    if verbose:
+        print(f"  dyntopo({target_age_ma} Ma)  ← {source} source age "
+              f"{src_age_T} Ma")
+
     if target_age_ma == 0:
         # No predecessor — Δz is identically zero, M_combined ≡ M_corrected.
-        # Load M_corrected just so the downstream cookie-cut/rotate step has
-        # a target grid to project zeros onto.
-        M_corr_pre, _ = load_corrected_scotese(target_age_ma)
-        diff_plate = xr.zeros_like(M_corr_pre)
+        diff_plate = xr.zeros_like(dyntopo_T)
         diff_plate.name = "z"
-        src_age_T = src_age_ref = 0
+        src_age_ref = 0
         if verbose:
             print("  t = 0: Δz set to zero by construction")
     else:
-        # 1. dyntopo at t in plate frame
-        dyntopo_T, src_age_T = load_dyntopo_at_age(source, target_age_ma)
-        if verbose:
-            print(f"  dyntopo({target_age_ma} Ma)  ← {source} source age "
-                  f"{src_age_T} Ma")
-        # 2. dyntopo at t − Δt in plate frame (per-step reference, NOT 0 Ma)
+        # dyntopo at t − Δt in plate frame (per-step reference, NOT 0 Ma)
         dyntopo_ref, src_age_ref = load_dyntopo_at_age(source, float(ref_age_ma))
         if verbose:
             print(f"  dyntopo({ref_age_ma} Ma)  ← {source} source age "
                   f"{src_age_ref} Ma  (Δt={step_myr} Myr reference)")
-        # 3. PER-STEP difference in plate frame: Δz = z(t) − z(t − Δt)
+        # PER-STEP difference in plate frame: Δz = z(t) − z(t − Δt)
         diff_plate = dyntopo_T - dyntopo_ref
         if verbose:
             print(f"  Δz_plate range: [{float(diff_plate.min()):+.0f}, "
                   f"{float(diff_plate.max()):+.0f}] m")
 
-    # 4-6. cookie-cut + rotate to Scotese paleomag frame
+    # 4-6. cookie-cut + rotate to Scotese paleomag frame —
+    # both the per-step Δz and the absolute past dyntopo.
     if verbose:
         print(f"  rotating into Scotese paleomag frame ...")
     diff_scotese = cookie_cut_and_rotate(diff_plate, target_age_ma,
@@ -329,13 +331,28 @@ def process_age(target_age_ma: int, source: str, *,
     if verbose:
         print(f"  diff_scotese range: [{float(diff_scotese.min()):+.0f}, "
               f"{float(diff_scotese.max()):+.0f}] m")
+    # Absolute dyntopo at age t (Young 2022 plate-frame field rotated into
+    # the Scotese paleomag frame at t).  Written as `z_dyntopo_paleomag`
+    # below — the headline field for the "absolute dyntopo on continents"
+    # video and for any analysis that wants the absolute past dyntopo
+    # rather than the per-step increment.
+    abs_scotese = cookie_cut_and_rotate(dyntopo_T, target_age_ma,
+                                         rot_file, polygons_file)
+    if verbose:
+        print(f"  z_dyntopo_paleomag range: "
+              f"[{float(abs_scotese.min()):+.0f}, "
+              f"{float(abs_scotese.max()):+.0f}] m")
 
     # 7. load M_corrected at target age + add the diff
     M_corr, M_orig = load_corrected_scotese(target_age_ma)
-    # Make sure all three are on the same grid; interpolate diff if needed
+    # Make sure all three are on the same grid; interpolate the diff and
+    # the absolute dyntopo if their grids differ from M_corrected's.
     if not (np.array_equal(diff_scotese["lat"].values, M_corr["lat"].values) and
             np.array_equal(diff_scotese["lon"].values, M_corr["lon"].values)):
         diff_scotese = diff_scotese.interp(
+            lat=M_corr["lat"], lon=M_corr["lon"], method="linear",
+            kwargs={"fill_value": 0.0})
+        abs_scotese = abs_scotese.interp(
             lat=M_corr["lat"], lon=M_corr["lon"], method="linear",
             kwargs={"fill_value": 0.0})
     M_combined = M_corr + diff_scotese.fillna(0.0)
@@ -373,6 +390,19 @@ def process_age(target_age_ma: int, source: str, *,
                              f"dyntopo({ref_age_ma} Ma), Δt={target_age_ma - ref_age_ma} Myr, "
                              f"plate-frame-computed then cookie-cut + rotated to "
                              f"Scotese paleomag frame at {target_age_ma} Ma",
+            }),
+            "z_dyntopo_paleomag": (abs_scotese.values, {
+                "units": "m",
+                "long_name": f"Absolute past dynamic topography at {target_age_ma} Ma "
+                             f"(Young et al. 2022 plate-frame field cookie-cut by "
+                             f"Scotese 2023 continental polygons and rotated into "
+                             f"Scotese paleomag frame at {target_age_ma} Ma). NOT "
+                             f"to be added on top of M_corrected directly — that "
+                             f"would double-count today's dynamic topography "
+                             f"contribution to present-day observed topography. "
+                             f"Provided as the absolute-state visualisation that "
+                             f"accompanies the per-step Δz correction used in "
+                             f"M_combined.",
             }),
             "M_combined": (M_combined.values, {
                 "units": "m",

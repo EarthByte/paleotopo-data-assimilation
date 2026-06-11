@@ -14,23 +14,37 @@ produced by build_dyntopo_diff_correction.py:
 
 Two modes are produced by default:
 
-    combined         M_combined — the geochem-corrected paleotopography with
-                     the per-step dyntopo increment added (the headline
-                     dyntopo-composition video).
-    dyntopo_diff     z_dyntopo_diff alone — the per-step dyntopo increment
-                     applied at each age, in Scotese paleomag frame.
+    combined            M_combined — the geochem-corrected paleotopography
+                        with the per-step dyntopo increment added (the
+                        headline dyntopo-composition video).
+    dyntopo_diff        z_dyntopo_diff alone — the per-step dyntopo
+                        increment applied at each age, in Scotese paleomag
+                        frame.
 
-A third "corrected" mode is available for direct side-by-side comparison:
-that mode reads M_corrected from the same combined NetCDFs and renders it
-in the identical projection / colour scale / age-stamp layout so paired
-videos can be compared frame-by-frame.
+Two additional modes are available on request:
+
+    corrected           M_corrected from the same combined NetCDFs, rendered
+                        in the identical projection / colour scale /
+                        age-stamp layout so paired videos can be compared
+                        frame-by-frame against the combined output.
+    dyntopo_absolute    z_dyntopo_paleomag — the absolute past dynamic
+                        topography on the continents at each age (Young
+                        2022 plate-frame field cookie-cut by Scotese 2023
+                        polygons and rotated into the time-t paleomag
+                        frame).  Polar cpt at ±1500 m.  NOT to be added
+                        directly to M_corrected (that would double-count
+                        today's dyntopo contribution); provided as the
+                        absolute-state visualisation that accompanies the
+                        per-step diff in M_combined.
 
 PER-FRAME LAYOUT
     - Winkel-Tripel projection (R0/18c)
     - combined / corrected cpt: GMT 'earth', range −4000..+4000 m
       (matches the main-text Fig 5 and the default Scotese paleotopo videos)
     - dyntopo_diff cpt:         GMT 'polar', range ±500 m
-    - plate-boundary overlay in BLACK on the dyntopo_diff video only
+    - dyntopo_absolute cpt:     GMT 'polar', range ±1500 m
+    - plate-boundary overlay in BLACK on the dyntopo_diff and
+      dyntopo_absolute videos
       (matches the delta-mode convention in render_videos_pygmt_scotese.py;
       S&W topologies resolve only for ages ≲ 100 Ma, older slices silently
       degrade to no overlay)
@@ -42,12 +56,14 @@ PER-FRAME LAYOUT
 INPUT
     PROJECT_ROOT / "data" / "corrected_Scotese_plus_dyntopo_diff_young"
         / "<age>Ma_corrected_plus_dyntopo_diff_young_SW.nc"
-    Variables read: M_corrected, M_combined, z_dyntopo_diff.
+    Variables read: M_corrected, M_combined, z_dyntopo_diff,
+                    z_dyntopo_paleomag.
 
 OUTPUT VIDEOS  (paths_scotese.OUTPUT_DIR)
     SW_paleotopo_combined_<a1>-<a2>Ma.mp4
     SW_paleotopo_dyntopo_diff_<a1>-<a2>Ma.mp4
-    SW_paleotopo_corrected_dt_<a1>-<a2>Ma.mp4    (optional, for comparison)
+    SW_paleotopo_corrected_<a1>-<a2>Ma.mp4         (optional)
+    SW_paleotopo_dyntopo_absolute_<a1>-<a2>Ma.mp4  (optional)
 
 USAGE
     cd <project>/scripts_Scotese
@@ -103,9 +119,13 @@ COMBINED_FNAME_RE  = re.compile(r"^(\d+)Ma_corrected_plus_dyntopo_diff_young_SW\
 
 # Globally-consistent cpt series.  Elevation modes use a FIXED range of
 # −4000 to +4000 m to match render_videos_pygmt_scotese.py and the main-text
-# Fig 5 comparison.  The dyntopo_diff range is fixed at ±500 m.
+# Fig 5 comparison.  The dyntopo_diff (per-step) range is fixed at ±500 m
+# and the dyntopo_absolute range at ±1500 m — the per-step magnitudes are
+# tens of metres while the absolute past dyntopo reaches a kilometre at
+# major upwelling / subsidence regions.
 ELEVATION_RANGE = (-4000.0, 4000.0)
 DYNTOPO_DIFF_RANGE = (-500.0, 500.0)
+DYNTOPO_ABS_RANGE  = (-1500.0, 1500.0)
 
 
 def auto_discover_ages(combined_dir: Path) -> list[int]:
@@ -140,7 +160,7 @@ def _nice_step(span: float) -> float:
 def render_frame(combined_dir: Path, t: int, mode: str, frame_path: Path):
     """Render one frame.
 
-    mode ∈ {'combined', 'corrected', 'dyntopo_diff'}.
+    mode ∈ {'combined', 'corrected', 'dyntopo_diff', 'dyntopo_absolute'}.
     """
     if mode == "combined":
         var = "M_combined"
@@ -157,17 +177,23 @@ def render_frame(combined_dir: Path, t: int, mode: str, frame_path: Path):
         cpt = "polar"
         lo, hi = DYNTOPO_DIFF_RANGE
         cb_label = "dyntopo per-step increment (m)"
+    elif mode == "dyntopo_absolute":
+        var = "z_dyntopo_paleomag"
+        cpt = "polar"
+        lo, hi = DYNTOPO_ABS_RANGE
+        cb_label = "dynamic topography (m)"
     else:
         raise ValueError(mode)
     step = _nice_step(hi - lo)
     series = (lo, hi, step)
 
     da = load_grid_xr(combined_dir, t, var).astype(np.float32)
-    # Mask the dyntopo_diff to the land footprint of M_combined / M_corrected
-    # so the diff doesn't paint over the open ocean where its value is
-    # meaningless (cookie-cut is by continental polygons, but cells just off
-    # the coast still carry small non-zero values from the rotation step).
-    if mode == "dyntopo_diff":
+    # For both dyntopo modes, mask to the land footprint of M_combined /
+    # M_corrected so the field doesn't paint over the open ocean where its
+    # value is meaningless (cookie-cut is by continental polygons, but
+    # cells just off the coast still carry small non-zero values from the
+    # rotation step).
+    if mode in ("dyntopo_diff", "dyntopo_absolute"):
         Mc = load_grid_xr(combined_dir, t, "M_corrected").values
         Mcomb = load_grid_xr(combined_dir, t, "M_combined").values
         land = (Mc >= 0) | (Mcomb >= 0)
@@ -194,7 +220,7 @@ def render_frame(combined_dir: Path, t: int, mode: str, frame_path: Path):
     # Plate-boundary overlay on dyntopo_diff only, in black (matches the
     # default Scotese delta-mode convention).  S&W topologies resolve only
     # for ages ≲ 100 Ma; older slices silently get no overlay.
-    if DRAW_SZ and mode == "dyntopo_diff":
+    if DRAW_SZ and mode in ("dyntopo_diff", "dyntopo_absolute"):
         try:
             from plate_model_utils_scotese import topology_lines
             from topology_render import draw_topologies_pygmt
@@ -253,8 +279,12 @@ def main():
     p.add_argument("--fps", type=int, default=10)
     p.add_argument("--modes", nargs="+",
                    default=["combined", "dyntopo_diff"],
-                   choices=["combined", "corrected", "dyntopo_diff"],
-                   help="which video(s) to build (default: combined dyntopo_diff)")
+                   choices=["combined", "corrected", "dyntopo_diff",
+                            "dyntopo_absolute"],
+                   help="which video(s) to build: combined / corrected / "
+                        "dyntopo_diff (per-step Δz) / dyntopo_absolute "
+                        "(absolute past dyntopo on continents). "
+                        "Default: combined dyntopo_diff.")
     p.add_argument("--keep-frames", action="store_true")
     p.add_argument("--force", action="store_true",
                    help="wipe cached per-frame PNGs under "
