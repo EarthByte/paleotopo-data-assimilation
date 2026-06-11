@@ -172,6 +172,7 @@ dynamic-topography model across 50–300 Ma.  Scripts:
 | `scripts/make_comparison_figures_dyntopo.py` | Supp Fig S2 — three Fig 5-style 2 × 3 comparisons at (300 \| 250), (200 \| 150), (100 \| 50) Ma |
 | `scripts/make_flooded_fraction_figure.py` | Supp Fig S3 — continental flooding through time |
 | `scripts/make_continent_elevation_figure.py` | Supp Fig S4 — per-continent mean elevation through time |
+| `scripts/render_videos_pygmt_dyntopo_scotese.py` | publication-quality Winkel-Tripel MP4s; modes `combined` / `dyntopo_diff` / `dyntopo_absolute` / `corrected` |
 | `scripts/render_corrected_plus_dyntopo_video.py` | cartopy / Robinson preview MP4s of the composed field |
 
 ### Data — Young et al. (2022) dynamic topography grids
@@ -180,8 +181,12 @@ Download the GLD428 grids from EarthByte (University of Sydney):
 
 | Release | URL | Files |
 |---|---|---|
-| 5-Myr cadence, 0–250 Ma | [`/Dynamic_Topography/gld428/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428/) | `gld428-PlateFrame-0-250Ma.zip` (48 MB), `gld428-MantleFrame-0-250Ma.zip` (67 MB) |
-| 20-Myr cadence (Merdith21 plate model), 0–1000 Ma | [`/Dynamic_Topography/gld428_m21/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428_m21/) | `gld428_plate_frame_grids.zip` (88 MB), `gld428_mantle_frame_grids.zip` (46 MB) |
+| 5-Myr cadence, 0–250 Ma (Merdith2021 plate model) | [`/Dynamic_Topography/gld428/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428/) | `gld428-PlateFrame-0-250Ma.zip` (48 MB), `gld428-MantleFrame-0-250Ma.zip` (67 MB) |
+| 20-Myr cadence (Merdith2021 plate model), 0–1000 Ma | [`/Dynamic_Topography/gld428_m21/`](https://www.earthbyte.org/webdav/ftp/Dynamic_Topography/gld428_m21/) | `gld428_plate_frame_grids.zip` (88 MB), `gld428_mantle_frame_grids.zip` (46 MB) |
+
+The dynamic-topography models can also be interactively visualised via the
+GPlates Portal Dynamic Topography page (under "Young et al., 2022"):
+<https://portal.gplates.org/portal/dt/>.
 
 `build_dyntopo_diff_correction.py` reads the plate-frame grids; the
 optional upstream `rotate_young_dyntopo_to_scotese.py` reads the
