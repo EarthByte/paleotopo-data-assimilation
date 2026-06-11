@@ -72,7 +72,7 @@ OPTIONS
     --ages INT INT INT INT INT INT   exactly six ages, top-row-first
                                      (default: 300 250 200 150 100 50)
     --vlim FLOAT                     symmetric +/- m for the polar cpt
-                                     (default 1500)
+                                     (default 500)
     --width-cm FLOAT                 width of each panel in cm (default 7)
     --no-pdf                         skip PDF export
     --no-png                         skip PNG export
@@ -108,7 +108,7 @@ from paths_scotese import OUTPUT_DIR
 # Configuration
 # ---------------------------------------------------------------------------
 DYNTOPO_CPT = "polar"
-DEFAULT_VLIM = 1500.0
+DEFAULT_VLIM = 500.0
 PROJ_BASE = "R0"                  # Winkel-Tripel centred at lon=0
 REGION = "g"                      # global
 DEFAULT_AGES = [300, 250, 200, 150, 100, 50]   # top-row-first
@@ -289,7 +289,7 @@ def main():
                    help=f"exactly 6 ages, top-row-first "
                         f"(default: {' '.join(str(a) for a in DEFAULT_AGES)})")
     p.add_argument("--vlim", type=float, default=DEFAULT_VLIM,
-                   help="symmetric +/- range for the polar cpt; default 1500 m")
+                   help="symmetric +/- range for the polar cpt; default 500 m")
     p.add_argument("--width-cm", type=float, default=7.0,
                    help="width of each panel in cm (default 7)")
     p.add_argument("--no-png", action="store_true")
