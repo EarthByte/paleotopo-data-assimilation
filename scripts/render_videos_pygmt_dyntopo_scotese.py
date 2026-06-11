@@ -31,7 +31,7 @@ Two additional modes are available on request:
                         topography on the continents at each age (Young
                         2022 plate-frame field cookie-cut by Scotese 2023
                         polygons and rotated into the time-t paleomag
-                        frame).  Polar cpt at ±1500 m.  NOT to be added
+                        frame).  Polar cpt at ±1200 m.  NOT to be added
                         directly to M_corrected (that would double-count
                         today's dyntopo contribution); provided as the
                         absolute-state visualisation that accompanies the
@@ -42,7 +42,7 @@ PER-FRAME LAYOUT
     - combined / corrected cpt: GMT 'earth', range −4000..+4000 m
       (matches the main-text Fig 5 and the default Scotese paleotopo videos)
     - dyntopo_diff cpt:         GMT 'polar', range ±500 m
-    - dyntopo_absolute cpt:     GMT 'polar', range ±1500 m
+    - dyntopo_absolute cpt:     GMT 'polar', range ±1200 m
     - plate-boundary overlay in BLACK on the dyntopo_diff and
       dyntopo_absolute videos
       (matches the delta-mode convention in render_videos_pygmt_scotese.py;
@@ -120,12 +120,13 @@ COMBINED_FNAME_RE  = re.compile(r"^(\d+)Ma_corrected_plus_dyntopo_diff_young_SW\
 # Globally-consistent cpt series.  Elevation modes use a FIXED range of
 # −4000 to +4000 m to match render_videos_pygmt_scotese.py and the main-text
 # Fig 5 comparison.  The dyntopo_diff (per-step) range is fixed at ±500 m
-# and the dyntopo_absolute range at ±1500 m — the per-step magnitudes are
-# tens of metres while the absolute past dyntopo reaches a kilometre at
-# major upwelling / subsidence regions.
+# and the dyntopo_absolute range at ±1200 m — the per-step magnitudes are
+# tens of metres, while the absolute past dyntopo can reach a kilometre
+# or so at major upwelling / subsidence regions, so ±1200 m gives good
+# contrast without saturating the extremes.
 ELEVATION_RANGE = (-4000.0, 4000.0)
 DYNTOPO_DIFF_RANGE = (-500.0, 500.0)
-DYNTOPO_ABS_RANGE  = (-1500.0, 1500.0)
+DYNTOPO_ABS_RANGE  = (-1200.0, 1200.0)
 
 
 def auto_discover_ages(combined_dir: Path) -> list[int]:
