@@ -64,7 +64,7 @@ OPTIONS
     --no-png            skip PNG export
     --dpi  INT          PNG dpi (default 200)
     --width-cm FLOAT    width of each map panel (default 10 cm)
-    --vlim-dyntopo M    symmetric +/- range for the dyntopo cpt (default 1500)
+    --vlim-dyntopo M    symmetric +/- range for the dyntopo cpt (default 500)
 
 DEPENDENCIES
     GMT 6.x, pygmt, xarray, netCDF4
@@ -80,7 +80,7 @@ NOTES
       and combined maps are directly comparable across panels (and across
       this figure vs the default Fig 5 comparison).
     - cpt range for the dyntopo row is FIXED at +/-`vlim-dyntopo` (default
-      1500 m) using GMT's `polar` diverging cpt.
+      500 m) using GMT's `polar` diverging cpt.
     - This script intentionally calls pyGMT for **all** plotting so the
       output is publication-grade Winkel-Tripel, matching the videos.
     - Scope-of-validity caveat for the caption: additive composition of
@@ -110,7 +110,7 @@ from paths_scotese import OUTPUT_DIR, PROJECT_ROOT
 ELEV_CPT = "earth"
 DYNTOPO_CPT = "polar"
 ELEV_RANGE = (-4000.0, 4000.0, 250.0)      # series for makecpt (rows 1 & 2)
-DEFAULT_VLIM_DYNTOPO = 1500.0              # +/- m for the dyntopo row (row 3)
+DEFAULT_VLIM_DYNTOPO = 500.0              # +/- m for the dyntopo row (row 3)
 PROJ_BASE = "R0"                            # Winkel-Tripel centred at lon=0
 REGION = "g"                                # global
 DRAW_SZ = True                              # overlay plate boundaries where resolvable
@@ -419,7 +419,7 @@ def main():
     p.add_argument("--width-cm", type=float, default=10.0,
                    help="width of each map panel in cm (default 10)")
     p.add_argument("--vlim-dyntopo", type=float, default=DEFAULT_VLIM_DYNTOPO,
-                   help="symmetric +/- range for the dyntopo cpt; default 1500 m")
+                   help="symmetric +/- range for the dyntopo cpt; default 500 m")
     args = p.parse_args()
 
     ages = args.pairs

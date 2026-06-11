@@ -29,7 +29,7 @@ PER-FRAME LAYOUT
     - Winkel-Tripel projection (R0/18c)
     - combined / corrected cpt: GMT 'earth', range −4000..+4000 m
       (matches the main-text Fig 5 and the default Scotese paleotopo videos)
-    - dyntopo_diff cpt:         GMT 'polar', range ±1500 m
+    - dyntopo_diff cpt:         GMT 'polar', range ±500 m
     - plate-boundary overlay in BLACK on the dyntopo_diff video only
       (matches the delta-mode convention in render_videos_pygmt_scotese.py;
       S&W topologies resolve only for ages ≲ 100 Ma, older slices silently
@@ -103,9 +103,9 @@ COMBINED_FNAME_RE  = re.compile(r"^(\d+)Ma_corrected_plus_dyntopo_diff_young_SW\
 
 # Globally-consistent cpt series.  Elevation modes use a FIXED range of
 # −4000 to +4000 m to match render_videos_pygmt_scotese.py and the main-text
-# Fig 5 comparison.  The dyntopo_diff range is fixed at ±1500 m.
+# Fig 5 comparison.  The dyntopo_diff range is fixed at ±500 m.
 ELEVATION_RANGE = (-4000.0, 4000.0)
-DYNTOPO_DIFF_RANGE = (-1500.0, 1500.0)
+DYNTOPO_DIFF_RANGE = (-500.0, 500.0)
 
 
 def auto_discover_ages(combined_dir: Path) -> list[int]:
