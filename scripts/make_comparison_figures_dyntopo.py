@@ -10,9 +10,9 @@ WHAT THIS DOES
     For each requested pair of ages, produces a 2-column x 3-row pyGMT
     figure in Winkel-Tripel projection.  Columns = ages, rows =
         row 1 - geochemically-corrected S&W elevation        (M_corrected)
-        row 2 - corrected + Young 2022 dyntopo difference    (M_combined)
-        row 3 - Young 2022 dyntopo TIME-DIFFERENCE,          (z_dyntopo_diff
-                dyntopo(t) - dyntopo(0), evaluated in         = correction signal
+        row 2 - corrected + Young 2022 dyntopo PER-STEP diff (M_combined)
+        row 3 - Young 2022 dyntopo PER-STEP increment,       (z_dyntopo_diff
+                dyntopo(t) - dyntopo(t - Δt), evaluated in         = correction signal
                 plate frame then cookie-cut + rotated         in paleomag frame)
                 to Scotese paleomag frame
     Shared colorbars at the bottom (one for the elevation rows, one for
@@ -21,7 +21,7 @@ WHAT THIS DOES
     The composition follows the methodology of
     `build_dyntopo_diff_correction.py`: present-day observed topography
     already contains today's dynamic-topography contribution, so the
-    paleo correction is the time-difference dyntopo(t) - dyntopo(0).
+    paleo correction is the time-difference dyntopo(t) - dyntopo(t - Δt).
     The subtraction is performed in plate reference frame (each cell
     rigidly attached to its continent) — subtracting at the same lat/lon
     in mantle/paleomag frame would compare different parts of different
@@ -132,7 +132,7 @@ def load_grid(t: int, combined_dir: Path):
 
     Reads the NetCDFs written by `build_dyntopo_diff_correction.py`:
     `M_corrected` (geochem-corrected S&W), `z_dyntopo_diff` (the
-    plate-frame-computed time-difference dyntopo(t) - dyntopo(0)
+    plate-frame-computed time-difference dyntopo(t) - dyntopo(t - Δt)
     cookie-cut + rotated into Scotese paleomag frame at time t — i.e.
     the actual correction signal added to M_corrected), and
     `M_combined = M_corrected + z_dyntopo_diff` (with the land-guard
@@ -326,20 +326,20 @@ def make_figure(age_left: int, age_right: int, out_basename: str,
     # ASCII-only title (Ghostscript 10.x ISOLatin1+_Encoding workaround).
     fig.shift_origin(xshift="0c", yshift="3.5c")    # leave room for colorbars
     draw_panel(fig, to_xr(z_L, lat, lon), dyn_cpt,
-               title="dyntopo diff (t - 0 Ma, plate frame)",
+               title="dyntopo diff (t - (t-Δt), plate frame)",
                proj=proj, cont_da=coast_L_corr_da, sz_lines=sz_L,
                plate_polys=pp_L,
                show_age_label=f"{age_left} Ma")
     fig.shift_origin(xshift=f"{width_cm+v_gap}c")
     draw_panel(fig, to_xr(z_R, lat, lon), dyn_cpt,
-               title="dyntopo diff (t - 0 Ma, plate frame)",
+               title="dyntopo diff (t - (t-Δt), plate frame)",
                proj=proj, cont_da=coast_R_corr_da, sz_lines=sz_R,
                plate_polys=pp_R,
                show_age_label=f"{age_right} Ma")
     # dyntopo-anomaly colorbar across both bottom panels
     cb_total_w = 2*width_cm + v_gap
     fig.colorbar(projection=proj, region=REGION, cmap=dyn_cpt,
-                 frame=['x+l"dynamic topography difference (m)"', "af"],
+                 frame=['x+l"dynamic topography per-step increment (m)"', "af"],
                  position=f"jBC+w{cb_total_w*0.6:.1f}c/0.3c"
                           f"+o-{(width_cm+v_gap)/2:.1f}c/-1.6c+h+e")
 

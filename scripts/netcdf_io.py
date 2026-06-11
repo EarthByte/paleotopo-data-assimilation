@@ -3,9 +3,9 @@
 netcdf_io.py  —  Shared CF-1.10 + ACDD-1.3 writer helpers for the project
 =============================================================================
 
-Single source of truth for writing NetCDF outputs across all workflows
-(NeuroLEM forward, Salles training, Scotese paleo-DEMs, Zhou geochem
-correction, Young 2022 dyntopo rotation, NeuroLEM erodep videos, etc.).
+Single source of truth for writing NetCDF outputs in this project
+(Scotese paleo-DEMs, Zhou geochem correction, Young 2022 dyntopo
+composition test, etc.).
 
 Every NetCDF written via these helpers carries:
 
@@ -49,7 +49,7 @@ shuffle, lossy bitgroom for floats via least_significant_digit=3 by default)
 so files come out compact without needing per-call tuning.
 
 USAGE
-    from neurolem.cu_provenance.netcdf_io import write_cf_grid
+    from netcdf_io import write_cf_grid
 
     write_cf_grid(
         out_path=Path("data/corrected_Scotese/50Ma_corrected_SW.nc"),

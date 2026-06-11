@@ -2,14 +2,14 @@
 """
 =============================================================================
 make_dyntopo_panels_figure.py  —  Supp-mat 6-panel overview of the Young
-                                  2022 dyntopo TIME-DIFFERENCE (plate-frame
+                                  2022 dyntopo PER-STEP INCREMENT (plate-frame
                                   computed, rotated to Scotese paleomag frame)
 =============================================================================
 
 WHAT THIS DOES
     Produces a single 2-row x 3-col pyGMT figure in Winkel-Tripel
-    projection showing the Young 2022 dyntopo TIME-DIFFERENCE
-    z_dyntopo_diff = [dyntopo(t) - dyntopo(0)] at six fixed ages.
+    projection showing the Young 2022 dyntopo PER-STEP INCREMENT
+    z_dyntopo_diff = [dyntopo(t) - dyntopo(t - Δt)],  Δt = 5 Myr by default at six fixed ages.
     Each panel shows the same correction signal that
     `build_dyntopo_diff_correction.py` adds to M_corrected at that age,
     laid out as a stand-alone 2x3 supp-mat figure.
@@ -20,14 +20,14 @@ WHAT THIS DOES
     GLD428 model output only extends to 300 Ma.  Polar diverging
     colourmap, single shared colourbar below the bottom row.
 
-WHY THE TIME-DIFFERENCE (and not the absolute past dyntopo)
+WHY THE PER-STEP INCREMENT (and not the cumulative anomaly)
     The present-day observed topography already contains today's
     dynamic-topography contribution.  Composing absolute past dyntopo
     onto a present-day-anchored reconstruction would double-count
     today's contribution.  The actual correction signal applied in
     `build_dyntopo_diff_correction.py` is the difference
-        Δz(t) = dyntopo(t) - dyntopo(0)
-    which is zero at t=0 by construction.  The subtraction is performed
+        Δz(t) = dyntopo(t) - dyntopo(t - Δt),  Δt = 5 Myr by default
+    which is zero at t=0 by construction (no predecessor).  The subtraction is performed
     in PLATE reference frame (each grid cell rigidly attached to its
     continent across time) so the comparison is between the same point
     on the same continent at two different times; subtracting at the
@@ -44,22 +44,7 @@ WHY THE TIME-DIFFERENCE (and not the absolute past dyntopo)
     related supp-mat figure where dyntopo is additively composed with
     the geochem-corrected S&W maps (`make_comparison_figures_dyntopo.py`).
 
-WHY MANTLE FRAME (and not Scotese paleomag frame)
-    Showing the dyntopo in the mantle reference frame is the natural
-    "as published" view of the Young 2022 model.  Once dyntopo is
-    rotated into the Scotese paleomag frame for the additive
-    composition step (see `add_dyntopo_to_corrected_scotese.py`), the
-    pattern of features can look unfamiliar relative to standard
-    mantle-flow diagnostics.  The mantle-frame figure here lets the
-    reader see the raw model output before any reframing.
-
-    Plate-boundary topology overlays are deliberately OMITTED:  the
-    Scotese & Wright topology resolves boundaries in the paleomag
-    frame, so plotting them on a mantle-frame map would produce a
-    misleading visual where dyntopo features and plate boundaries don't
-    line up.
-
-    All six panel ages must have a combined NetCDF in --combined-dir
+All six panel ages must have a combined NetCDF in --combined-dir
     (the output of build_dyntopo_diff_correction.py).  The script
     refuses to run if any are missing.
 
@@ -139,7 +124,7 @@ DEFAULT_COMBINED_DIR = Path(__file__).resolve().parent.parent / "data" \
 # ---------------------------------------------------------------------------
 def load_dyntopo_diff(combined_dir: Path, age: int):
     """Return (z_dyntopo_diff, lat, lon) for the Scotese-paleomag-frame
-    dyntopo time-difference at `age`, read from the build_dyntopo_diff_
+    dyntopo per-step increment at `age`, read from the build_dyntopo_diff_
     correction.py output NetCDF.
     """
     f = combined_dir / COMBINED_FNAME_FMT.format(age=int(age))
