@@ -98,7 +98,7 @@ import netCDF4 as nc
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import OUTPUT_DIR, PROJECT_ROOT
+from paths_scotese import OUTPUT_DIR, PROJECT_ROOT, VIDEOS_DIR
 
 PROJ_ROOT = HERE.parent
 DEFAULT_COMBINED_DIR = PROJECT_ROOT / "data" / "corrected_Scotese_plus_dyntopo_diff_young"
@@ -329,7 +329,7 @@ def main():
                 continue
             print(f"[{mode}] rendering frame {n+1}/{len(ages)} at {t} Ma")
             render_frame(args.combined_dir, t, mode, frame)
-        out_video = OUT_DIR / f"SW_paleotopo_{mode}_{ages[0]}-{ages[-1]}Ma.mp4"
+        out_video = VIDEOS_DIR / f"SW_paleotopo_{mode}_{ages[0]}-{ages[-1]}Ma.mp4"
         if out_video.exists():
             out_video.unlink()
         stitch_video(sub / "frame_%04d.png", out_video,

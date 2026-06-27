@@ -59,7 +59,7 @@ import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from paths_scotese import OUTPUT_DIR, PROJECT_ROOT
+from paths_scotese import OUTPUT_DIR, PROJECT_ROOT, VIDEOS_DIR
 
 COMBINED_FNAME_RE = re.compile(r"^(\d+)Ma_corrected_plus_dyntopo_diff_young_SW\.nc$")
 COMBINED_FNAME_FMT = "{age}Ma_corrected_plus_dyntopo_diff_young_SW.nc"
@@ -232,7 +232,7 @@ def main() -> int:
             tag = {"combined": "combined",
                    "corrected": "corrected_dt",
                    "dyntopo": "dyntopo"}[mode]
-            out = OUT_DIR / f"SW_paleotopo_{tag}_{ages[0]}-{ages[-1]}Ma_preview.mp4"
+            out = VIDEOS_DIR / f"SW_paleotopo_{tag}_{ages[0]}-{ages[-1]}Ma_preview.mp4"
             if out.exists():
                 out.unlink()
             cmd = ["ffmpeg", "-y", "-framerate", str(args.fps),

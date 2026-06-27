@@ -50,7 +50,7 @@ import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, CSV_PATH
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, CSV_PATH, VIDEOS_DIR
 from sw_io import available_ages as sw_available_ages
 
 OUT_DIR = OUTPUT_DIR
@@ -351,7 +351,7 @@ def main():
                 print(f"[{mode}] rendered {rendered} frames so far (latest age {t} Ma)")
         existing = sorted(sub.glob("frame_*.png"))
         if len(existing) == len(ages):
-            out = OUT_DIR / f"SW_paleotopo_{mode}_{ages[0]}-{ages[-1]}Ma_preview.mp4"
+            out = VIDEOS_DIR / f"SW_paleotopo_{mode}_{ages[0]}-{ages[-1]}Ma_preview.mp4"
             if out.exists(): out.unlink()
             cmd = ["ffmpeg", "-y", "-framerate", str(args.fps),
                    "-i", str(sub / "frame_%04d.png"),

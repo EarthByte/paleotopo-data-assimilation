@@ -47,7 +47,7 @@ import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, FIGURES_DIR
 
 PER_SLICE_CSV = CORRECTED_DIR / "per_slice_stats_SW.csv"
 
@@ -212,7 +212,7 @@ def main():
     plt.suptitle("Scotese & Wright assimilation — full-sweep diagnostics",
                  fontsize=14, y=0.995)
     plt.tight_layout()
-    out = OUTPUT_DIR / "SW_full_sweep_diagnostics.png"
+    out = FIGURES_DIR / "SW_full_sweep_diagnostics.png"
     plt.savefig(out, dpi=140, bbox_inches="tight")
     print(f"wrote {out}")
 
@@ -238,7 +238,7 @@ def main():
     ax.grid(True, alpha=0.3); ax.legend(loc="upper left", fontsize=8)
     ax.set_ylim(0, 6000)
     plt.tight_layout()
-    out = OUTPUT_DIR / "SW_hypsometry_selected_ages.png"
+    out = FIGURES_DIR / "SW_hypsometry_selected_ages.png"
     plt.savefig(out, dpi=140, bbox_inches="tight")
     print(f"wrote {out}")
 
@@ -259,7 +259,7 @@ def main():
         ax.grid(True, alpha=0.3)
     plt.suptitle("S&W assimilation — diagnostics by geological era", fontsize=14)
     plt.tight_layout()
-    out = OUTPUT_DIR / "SW_metrics_by_era.png"
+    out = FIGURES_DIR / "SW_metrics_by_era.png"
     plt.savefig(out, dpi=140, bbox_inches="tight")
     print(f"wrote {out}")
 

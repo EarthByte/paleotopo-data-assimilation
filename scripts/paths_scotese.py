@@ -17,7 +17,12 @@ Inputs:
 
 Outputs:
   - CORRECTED_DIR : per-Ma corrected NetCDFs + summary CSVs
-  - OUTPUT_DIR    : videos and diagnostic figures
+  - OUTPUT_DIR    : parent of figures/ and videos/ subdirectories
+                    (kept for backward compatibility; new scripts should
+                    write to FIGURES_DIR or VIDEOS_DIR directly)
+  - FIGURES_DIR   : all static outputs (PNG, PDF, CSV summary tables,
+                    paper figures)
+  - VIDEOS_DIR    : all MP4 animations
   - DOCS_DIR      : Scotese-specific docs
 
 Default project root is the parent of scripts_Scotese/.  Override with
@@ -71,12 +76,14 @@ CONTINENTAL_POLYGONS_FILE = next(
 # ---------- outputs ----------
 CORRECTED_DIR = PROJECT_ROOT / "data" / "corrected_Scotese"
 OUTPUT_DIR    = PROJECT_ROOT / "outputs_Scotese"
+FIGURES_DIR   = OUTPUT_DIR / "figures"
+VIDEOS_DIR    = OUTPUT_DIR / "videos"
 DOCS_DIR      = PROJECT_ROOT / "docs"
 
 
 def ensure_output_dirs():
     """Create writable output directories if missing."""
-    for d in (CORRECTED_DIR, OUTPUT_DIR):
+    for d in (CORRECTED_DIR, OUTPUT_DIR, FIGURES_DIR, VIDEOS_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
 
@@ -90,5 +97,7 @@ if __name__ == "__main__":
                     ("CSV_PATH", CSV_PATH),
                     ("CORRECTED_DIR", CORRECTED_DIR),
                     ("OUTPUT_DIR", OUTPUT_DIR),
+                    ("FIGURES_DIR", FIGURES_DIR),
+                    ("VIDEOS_DIR", VIDEOS_DIR),
                     ("DOCS_DIR", DOCS_DIR)]:
         print(f"{name:26s}=", p, "(exists:", p.exists(), ")")
