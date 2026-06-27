@@ -49,8 +49,8 @@ All six panel ages must have a combined NetCDF in --combined-dir
     refuses to run if any are missing.
 
 OUTPUT
-    paths_scotese.OUTPUT_DIR / "dyntopo_diff_panels_300-50Ma.png"
-    paths_scotese.OUTPUT_DIR / "dyntopo_diff_panels_300-50Ma.pdf"
+    paths_scotese.FIGURES_DIR / "dyntopo_diff_panels_300-50Ma.png"
+    paths_scotese.FIGURES_DIR / "dyntopo_diff_panels_300-50Ma.pdf"
     (filename is suffixed with the actual --ages list at run time)
 
 USAGE
@@ -101,7 +101,7 @@ import pygmt
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import OUTPUT_DIR
+from paths_scotese import OUTPUT_DIR, FIGURES_DIR
 
 
 # ---------------------------------------------------------------------------
@@ -261,12 +261,12 @@ def make_figure(ages: list[int], combined_dir: Path,
 
     # ---- Save ----
     if write_png:
-        out_png = OUTPUT_DIR / f"{out_basename}.png"
+        out_png = FIGURES_DIR / f"{out_basename}.png"
         if out_png.exists(): out_png.unlink()
         fig.savefig(out_png, dpi=dpi)
         print(f"  wrote {out_png}")
     if write_pdf:
-        out_pdf = OUTPUT_DIR / f"{out_basename}.pdf"
+        out_pdf = FIGURES_DIR / f"{out_basename}.pdf"
         if out_pdf.exists(): out_pdf.unlink()
         fig.savefig(out_pdf)
         print(f"  wrote {out_pdf}")

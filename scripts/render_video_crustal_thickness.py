@@ -35,7 +35,7 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, VIDEOS_DIR
 
 FRAME_DIR = OUTPUT_DIR / "video_frames_crustal_thickness_SW"
 OUT_DIR   = OUTPUT_DIR
@@ -122,7 +122,7 @@ def render_frame(age_ma: int, out_path: Path):
 
 
 def stitch(n_frames: int, fps: int, age_lo: int, age_hi: int):
-    out = OUT_DIR / f"SW_crustal_thickness_{age_hi}-{age_lo}Ma.mp4"
+    out = VIDEOS_DIR / f"SW_crustal_thickness_{age_hi}-{age_lo}Ma.mp4"
     if out.exists():
         out.unlink()
     cmd = ["ffmpeg", "-y", "-framerate", str(fps),

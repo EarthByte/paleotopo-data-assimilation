@@ -59,7 +59,7 @@ import netCDF4 as nc
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, CSV_PATH
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, CSV_PATH, VIDEOS_DIR
 from sw_io import available_ages as sw_available_ages
 
 PROJ_ROOT = HERE.parent
@@ -416,7 +416,7 @@ def main():
             if frame.exists(): continue
             print(f"[{mode}] rendering frame {n}/{len(ages)} at {t} Ma")
             render_frame(t, mode, frame)
-        out_video = OUT_DIR / f"SW_paleotopo_{mode}_{ages[0]}-{ages[-1]}Ma.mp4"
+        out_video = VIDEOS_DIR / f"SW_paleotopo_{mode}_{ages[0]}-{ages[-1]}Ma.mp4"
         if out_video.exists(): out_video.unlink()
         stitch_video(sub / "frame_%04d.png", out_video, args.fps, n_frames=len(ages))
         print(f"  wrote {out_video}")

@@ -30,9 +30,9 @@ WHAT THIS DOES
     evaluate a sparse subset if you only want anchor points.
 
 OUTPUT
-    paths_scotese.OUTPUT_DIR / "SW_flooded_fraction_corrected_vs_dyntopo.png"
-    paths_scotese.OUTPUT_DIR / "SW_flooded_fraction_corrected_vs_dyntopo.pdf"
-    paths_scotese.OUTPUT_DIR / "SW_flooded_fraction_corrected_vs_dyntopo.csv"
+    paths_scotese.FIGURES_DIR / "SW_flooded_fraction_corrected_vs_dyntopo.png"
+    paths_scotese.FIGURES_DIR / "SW_flooded_fraction_corrected_vs_dyntopo.pdf"
+    paths_scotese.FIGURES_DIR / "SW_flooded_fraction_corrected_vs_dyntopo.csv"
         (the same numbers as a small csv, for traceability)
 
 USAGE
@@ -67,7 +67,7 @@ import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import OUTPUT_DIR, PROJECT_ROOT
+from paths_scotese import OUTPUT_DIR, PROJECT_ROOT, FIGURES_DIR
 
 
 # ---------------------------------------------------------------------------

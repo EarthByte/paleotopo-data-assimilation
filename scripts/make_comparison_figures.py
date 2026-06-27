@@ -20,8 +20,8 @@ WHAT THIS DOES
         figure 3: (100 Ma,  50 Ma)
 
 OUTPUT
-    paths_scotese.OUTPUT_DIR / "SW_comparison_<age1>-<age2>Ma.png"
-    paths_scotese.OUTPUT_DIR / "SW_comparison_<age1>-<age2>Ma.pdf"
+    paths_scotese.FIGURES_DIR / "SW_comparison_<age1>-<age2>Ma.png"
+    paths_scotese.FIGURES_DIR / "SW_comparison_<age1>-<age2>Ma.pdf"
 
 USAGE
     cd <project>/scripts
@@ -63,7 +63,7 @@ import pygmt
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, PROJECT_ROOT
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, PROJECT_ROOT, FIGURES_DIR
 from sw_io import available_ages as sw_available_ages, nearest_cell_index
 import assimilate_scotese as A   # for prepare_samples + decluster
 
@@ -380,7 +380,7 @@ def make_figure(age_left: int, age_right: int, out_basename: str,
         paper_dir.mkdir(parents=True, exist_ok=True)
 
     if write_png:
-        out_png = OUTPUT_DIR / f"{out_basename}.png"
+        out_png = FIGURES_DIR / f"{out_basename}.png"
         if out_png.exists(): out_png.unlink()
         fig.savefig(out_png, dpi=dpi)
         print(f"  wrote {out_png}")
@@ -390,7 +390,7 @@ def make_figure(age_left: int, age_right: int, out_basename: str,
             fig.savefig(paper_png, dpi=dpi)
             print(f"  wrote {paper_png}")
     if write_pdf:
-        out_pdf = OUTPUT_DIR / f"{out_basename}.pdf"
+        out_pdf = FIGURES_DIR / f"{out_basename}.pdf"
         if out_pdf.exists(): out_pdf.unlink()
         fig.savefig(out_pdf)
         print(f"  wrote {out_pdf}")
