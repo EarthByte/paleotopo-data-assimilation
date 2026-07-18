@@ -274,6 +274,29 @@ production values used for the Phanerozoic sweep released with the paper:
 | `FINAL_LAND_SMOOTH_SIGMA` | 0.0 (disabled) | optional subaerial-only Gaussian on M_corrected |
 | `CONT_MASK_CLOSING_ITER` | 6 | morphological closing iterations on the continent mask (fills polygon gaps up to ~12 cells wide) |
 
+### Young-age correction taper
+
+| Parameter | Default | Role |
+|---|---|---|
+| `YOUNG_TAPER_T_FULL` | 15 Ma | age by which the geochem correction reaches full strength; it is ramped linearly to zero at 0 Ma (`0.0` disables the taper) |
+
+At 0 Ma the assimilation is bypassed by design — the present-day DEM is
+observed directly and must not be altered, so `delta ≡ 0`.  Without a
+taper the correction jumps to its full amplitude (`delta ≈ +100 m` mean
+over land) at the very next slice (5 Ma), so a chained or time-stepping
+consumer of the corrected DEMs (e.g. a stepwise landscape-evolution
+model) sees a broad continental step appear across the 0↔5 Ma boundary
+that is an artefact of the bypass rather than tectonics.  The method was
+designed to amplitude-correct the kinematic prior in *deep* time, where
+sparse geochem samples are spatially bled into a geologically plausible
+field; the youngest Cenozoic — plates near their modern positions, S&W
+already close to truth — never required it.  `YOUNG_TAPER_T_FULL` ramps
+the correction `ramp(t) = min(1, t / T_full)` so it grows smoothly from
+the fixed 0 Ma DEM instead of switching on abruptly.  Because it is a
+per-age, same-frame rescale of `M_corrected − M_orig`, it is independent
+of plate motion, leaves ages ≥ `T_full` unchanged, and only affects the
+5 and 10 Ma slices at the default value.
+
 ### Continent / province classification
 
 | Parameter | Default | Role |
