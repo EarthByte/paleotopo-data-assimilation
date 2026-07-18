@@ -194,6 +194,29 @@ W_MISSING_OVER40 = 0.25
 # zero-elevation cells in the rendered map.
 SUBAERIAL_FLOOR_M = 1.0
 
+# --- Young-age correction taper --------------------------------------------
+# At 0 Ma the assimilation is bypassed entirely (M_corrected = M_orig): the
+# present-day DEM is observed directly and must not be altered.  But the
+# geochem correction is at full amplitude the instant one steps off 0 Ma
+# (delta ~ +100 m mean over land at 5 Ma), so a chained / time-stepping
+# consumer of the corrected DEMs (e.g. a stepwise landscape-evolution model)
+# sees a broad continental step appear across the 0<->5 Ma boundary that is
+# an artefact of the bypass, not tectonics.  The method was designed to
+# amplitude-correct the kinematic prior in DEEP time, where the sparse
+# geochem samples are spatially bled into a geologically plausible field;
+# the youngest Cenozoic (plates near modern positions, S&W already close to
+# truth) never needed it, and the abrupt 0-Ma switch was an unintended
+# side effect.
+#
+# We therefore taper the correction smoothly to zero as t -> 0 over a short
+# young-age window: ramp(t) = min(1, t / YOUNG_TAPER_T_FULL).  This leaves
+# 0 Ma untouched (ramp = 0, i.e. the existing bypass), leaves ages
+# >= YOUNG_TAPER_T_FULL untouched (ramp = 1, full correction), and blends
+# partial corrections in between so no single step carries the full jump.
+# It is a per-age, same-frame rescale of the (M_final - M_orig) field, so it
+# is independent of plate motion.  Set YOUNG_TAPER_T_FULL = 0.0 to disable.
+YOUNG_TAPER_T_FULL = 15.0
+
 # Depth at which corrections fade to zero in submerged cells.  Replaces
 # the previous binary "still-submerged → revert to M_orig" guard, which
 # created a step-function discontinuity at the M_orig=0 coastline
@@ -872,6 +895,42 @@ def finalise(M_orig, M_cand, cont_mask):
 
 
 # ---------------------------------------------------------------------------
+# Young-age correction taper
+# ---------------------------------------------------------------------------
+def young_taper_ramp(t):
+    """Linear taper weight for the geochem correction near present day.
+
+    0 at 0 Ma (the present-day bypass), rising linearly to 1 at
+    YOUNG_TAPER_T_FULL, and clamped to 1 for older ages.  See the
+    YOUNG_TAPER_T_FULL comment block for the rationale.
+    """
+    if YOUNG_TAPER_T_FULL is None or YOUNG_TAPER_T_FULL <= 0:
+        return 1.0
+    return float(min(1.0, max(0.0, t / YOUNG_TAPER_T_FULL)))
+
+
+def apply_young_taper(t, M_orig, M_final, cont_mask):
+    """Scale the assimilation correction (M_final - M_orig) by the young-age
+    ramp, re-applying finalise()'s invariants (safety bounds, ocean =
+    M_orig, subaerial floor).  A no-op for ages >= YOUNG_TAPER_T_FULL.
+
+    This is a same-age, per-cell rescale of the correction field, so it
+    carries no plate-motion dependence: it only changes HOW MUCH of the
+    already-computed correction is applied at young ages, never WHERE.
+    """
+    r = young_taper_ramp(t)
+    if r >= 1.0:
+        return M_final
+    delta = (M_final - M_orig) * r            # shrink toward the S&W prior
+    Mt = np.clip(M_orig + delta, ZMIN, ZMAX)
+    Mt = np.where(cont_mask, Mt, M_orig)      # ocean untouched
+    was_subaerial = (M_orig > 0)
+    Mt = np.where(was_subaerial & (Mt < SUBAERIAL_FLOOR_M),
+                  SUBAERIAL_FLOOR_M, Mt)
+    return Mt
+
+
+# ---------------------------------------------------------------------------
 # Per-slice orchestrator
 # ---------------------------------------------------------------------------
 def assimilate_one(t, save_nc=True):
@@ -1028,6 +1087,18 @@ def assimilate_one(t, save_nc=True):
         r, n_eff_grid = smoothed_residual(M3, P_g, dec, lat, lon, cont, ls_km=RESID_LS_KM)
         M_final = finalise(M, M3 + r, cont)
 
+    # Young-age correction taper: ramp the geochem correction to zero at
+    # 0 Ma (removes the present-day-bypass discontinuity for chained /
+    # time-stepping consumers).  No-op for t >= YOUNG_TAPER_T_FULL, and the
+    # 0 Ma slice already returned via the bypass above.  Applied before the
+    # diagnostics so the reported bias/RMS/p99/Δ_rms and the written grid
+    # describe the same (tapered) field.
+    _r_taper = young_taper_ramp(t)
+    if _r_taper < 1.0:
+        M_final = apply_young_taper(t, M, M_final, cont)
+        print(f"             young-age taper: ramp({t:.0f} Ma)={_r_taper:.3f} "
+              f"→ correction scaled to {100*_r_taper:.0f} %")
+
     elapsed = time.time() - t0
     # Diagnostics
     bias_before = bias_after = rms_before = rms_after = np.nan
@@ -1075,6 +1146,8 @@ def assimilate_one(t, save_nc=True):
                         f"local_support_km={LOCAL_SUPPORT_KM}; "
                         f"depth_fade_m={DEPTH_FADE_M}; "
                         f"classifier={PROVINCE_CLASSIFIER}")
+            f.young_taper_t_full_Ma = float(YOUNG_TAPER_T_FULL)
+            f.young_taper_ramp = float(young_taper_ramp(t))
     return summary, M, M_final, P_g, cont, dec
 
 
