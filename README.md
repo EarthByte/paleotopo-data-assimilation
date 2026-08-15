@@ -68,6 +68,7 @@ paleotopo-data-assimilation/
 │   ├── full_sweep_diagnostics_scotese.py ← temporal-evolution figures
 │   ├── sensitivity_refinements.py ← four-refinement ablation (Fig 10)
 │   ├── derive_crustal_thickness.py ← Airy-isostasy z_c from M_corrected (Fig 11)
+│   ├── build_geochem_elevation_ensemble.py ← geochemical p05/p50/p95 ensemble
 │   │
 │   ├── make_*.py                  ← figure scripts (Fig 2/3/4/5/8)
 │   ├── draw_methodology_flowchart.py ← Fig 1
@@ -156,6 +157,21 @@ Each `<age>Ma_corrected_SW.nc` contains:
 | `n_eff` | f4 | effective sample support per cell |
 
 Plus global attributes documenting the run configuration.
+
+---
+
+## Geochemical-observation uncertainty ensemble
+
+`scripts/build_geochem_elevation_ensemble.py` propagates the six isostatic
+models, the sample low/mid/high crustal-thickness envelopes, missing-data risk
+and finite geochemical sampling through the full assimilation. It produces
+compact p05/median/p95 correction fields and an optional compressed member cube
+for member-by-member NeuroLEM application. The Scotese-Wright prior and all
+assimilation settings remain fixed.
+
+See [`docs/GEOCHEM_UNCERTAINTY_ENSEMBLE.md`](docs/GEOCHEM_UNCERTAINTY_ENSEMBLE.md)
+for the experiment design, output semantics, disk-efficient workflow and the
+recommended direct-goSPL validation ages.
 
 ---
 
