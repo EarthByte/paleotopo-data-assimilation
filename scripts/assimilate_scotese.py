@@ -183,8 +183,32 @@ PROV_TAPER_CELLS = 2                # ~220 km fade distance.  Kept SMALL
                                     # edge cells (d=1) and the next ring
                                     # (d=2) get damped; everything d>=3
                                     # gets full correction.  The cross-
-                                    # boundary smoothing (below) does the
+                                    # boundary smoothing (above) does the
                                     # job of bridging adjacent provinces.
+                                    #
+                                    # Known cost, measured on the Hasterok
+                                    # partition at 1 degree over the provinces
+                                    # retained after the craton and shield
+                                    # exclusion: 61% of continental area gets
+                                    # w=0 and only 8% gets w=1, an area-
+                                    # weighted mean weight of 0.21 (52% zeroed
+                                    # for orogenic belts, 65% volcanic arcs,
+                                    # 74% accretionary complexes, 83% foredeep
+                                    # basins).  The taper therefore suppresses
+                                    # most of the correction amplitude and
+                                    # bears hardest on narrow provinces.  It is
+                                    # retained deliberately: disabling it lets
+                                    # adjacent province CDFs meet at their own
+                                    # values, which produces sharp, non-
+                                    # geological boundaries in the corrected
+                                    # maps.  Do not set this to 0 without
+                                    # inspecting the resulting dz maps.
+DROP_CRATON_SAMPLES = True          # Exclude geochemical samples that fall
+                                    # inside a Shirmard et al. (2025) craton
+                                    # outline.  See prepare_samples() and
+                                    # shirmard_cratons.py.  Set False to
+                                    # restore the pre-exclusion behaviour.
+
 W_MISSING_OVER40 = 0.25
 # Floor for cells that were subaerial (M_orig > 0) in the kinematic
 # prior — the corrected field must keep them above sea level so the
@@ -527,6 +551,30 @@ def prepare_samples(df, t):
     if _CLASSIFIER is not None:
         df["Tecto_Prov"] = _CLASSIFIER(df["Lat"].values, df["Lon"].values)
     df["Tecto_Prov"] = df["Tecto_Prov"].fillna("Other")
+
+    # --- Craton exclusion -------------------------------------------------
+    # Cratonic elevation is not set by crustal thickness: Mooney and Vidale
+    # (2003, Lithos 71, 185-193) find cratons sit 300 to 1500 m below the
+    # prediction of pure crustal isostasy because sub-crustal density carries
+    # the compensation.  A chemical-mohometry thickness therefore has no skill
+    # in predicting cratonic elevation, and the Airy conversion is biased high
+    # there, which would add spurious relief and spurious erosion.
+    #
+    # The polygons are Shirmard et al. (2025, Geoscience Frontiers 16, 102176)
+    # seismically inferred craton outlines -- see shirmard_cratons.py for why
+    # they are used in preference to the Hasterok craton and shield classes,
+    # and why a polygon mask rather than a province name is the only workable
+    # route while PROVINCE_CLASSIFIER defaults to "geomorphic".
+    #
+    # This is a SAMPLE selection, applied at present-day coordinates like the
+    # province classification above.  Nothing downstream masks or tapers the
+    # correction field by craton geometry, so no boundary artefact is created.
+    if DROP_CRATON_SAMPLES and not df.empty:
+        from shirmard_cratons import in_craton
+        cra = in_craton(df["Lat"].values, df["Lon"].values)
+        if cra.any():
+            df = df[~cra]
+
     return df.dropna(subset=["z_obs_m"])
 
 
@@ -988,12 +1036,13 @@ def assimilate_one(t, save_nc=True):
                 f.createDimension("lon", len(lon))
                 f.createVariable("lat", "f4", ("lat",))[:] = lat
                 f.createVariable("lon", "f4", ("lon",))[:] = lon
-                f.createVariable("M_orig",      "f4", ("lat","lon"))[:] = M
-                f.createVariable("M_corrected", "f4", ("lat","lon"))[:] = M_final
-                f.createVariable("delta",       "f4", ("lat","lon"))[:] = M_final - M
-                f.createVariable("province",    "i1", ("lat","lon"))[:] = P_g
-                f.createVariable("continent_mask", "i1", ("lat","lon"))[:] = cont.astype(np.int8)
-                f.createVariable("n_eff",       "f4", ("lat","lon"))[:] = n_eff_grid
+                _z = dict(zlib=True, complevel=4)  # lossless DEFLATE, ~5x smaller
+                f.createVariable("M_orig",      "f4", ("lat","lon"), **_z)[:] = M
+                f.createVariable("M_corrected", "f4", ("lat","lon"), **_z)[:] = M_final
+                f.createVariable("delta",       "f4", ("lat","lon"), **_z)[:] = M_final - M
+                f.createVariable("province",    "i1", ("lat","lon"), **_z)[:] = P_g
+                f.createVariable("continent_mask", "i1", ("lat","lon"), **_z)[:] = cont.astype(np.int8)
+                f.createVariable("n_eff",       "f4", ("lat","lon"), **_z)[:] = n_eff_grid
                 f.target_age_Ma = 0.0
                 f.dataset = "Scotese & Wright 2018 PaleoDEMs"
                 f.config  = "present-day bypass (M_corrected = M_orig)"
@@ -1133,12 +1182,13 @@ def assimilate_one(t, save_nc=True):
             f.createDimension("lat", len(lat)); f.createDimension("lon", len(lon))
             f.createVariable("lat", "f4", ("lat",))[:] = lat
             f.createVariable("lon", "f4", ("lon",))[:] = lon
-            f.createVariable("M_orig", "f4", ("lat","lon"))[:] = M
-            f.createVariable("M_corrected", "f4", ("lat","lon"))[:] = M_final
-            f.createVariable("delta", "f4", ("lat","lon"))[:] = M_final - M
-            f.createVariable("province", "i1", ("lat","lon"))[:] = P_g
-            f.createVariable("continent_mask", "i1", ("lat","lon"))[:] = cont.astype(np.int8)
-            f.createVariable("n_eff", "f4", ("lat","lon"))[:] = n_eff_grid
+            _z = dict(zlib=True, complevel=4)  # lossless DEFLATE, ~5x smaller
+            f.createVariable("M_orig", "f4", ("lat","lon"), **_z)[:] = M
+            f.createVariable("M_corrected", "f4", ("lat","lon"), **_z)[:] = M_final
+            f.createVariable("delta", "f4", ("lat","lon"), **_z)[:] = M_final - M
+            f.createVariable("province", "i1", ("lat","lon"), **_z)[:] = P_g
+            f.createVariable("continent_mask", "i1", ("lat","lon"), **_z)[:] = cont.astype(np.int8)
+            f.createVariable("n_eff", "f4", ("lat","lon"), **_z)[:] = n_eff_grid
             f.target_age_Ma = float(t)
             f.dataset = "Scotese & Wright 2018 PaleoDEMs"
             f.config = (f"hybrid; ls={RESID_LS_KM}km; cap={DZ_MAX}m; "

@@ -24,15 +24,17 @@ In both cases z_c grows with h, but the subaerial formula uses the
 full mantle density contrast whereas the sub-aqueous one is damped by
 the water on top of the depression.
 
-Default constants (overrideable at the top of the file or via CLI):
+Default constants (overrideable at the top of the file):
 
-    z_0  = 33.0  km      normal continental crust at sea level
-    ρ_c  = 2850. kg/m³   bulk continental crust
-    ρ_m  = 3300. kg/m³   asthenospheric mantle
-    ρ_w  = 1030. kg/m³   sea water
+    z_0  = 33.0     km      normal continental crust at sea level
+    ρ_c  = 2848.11  kg/m³   continental crust, LithoRef18 reference column
+    ρ_m  = 3324.93  kg/m³   lithospheric mantle, LithoRef18 reference column
+    ρ_w  = 1030.    kg/m³   sea water
 
-These are the textbook values used in most paleo-elevation /
-paleo-crustal-thickness conversions.  They are deliberately *spatially
+The densities are the reference-column values of Afonso et al. (2019),
+replacing the former textbook 2850 / 3300 pair; see the comment block
+below for why the lithospheric rather than the asthenospheric mantle
+density is the right contrast here.  They are deliberately *spatially
 uniform*; the geochem-mohometry inputs to the assimilation use
 per-sample density models (Herzberg, Brown, Davis, Condie), but here we
 operate on the gridded corrected elevation field where no cell-level
@@ -68,12 +70,45 @@ sys.path.insert(0, str(HERE))
 from paths_scotese import CORRECTED_DIR, OUTPUT_DIR
 
 # ---------------------------------------------------------------------------
-# Standard Airy-isostasy constants — edit here if you want to swap
-# density structures.
+# Airy-isostasy constants, taken from the LithoRef18 reference column
 # ---------------------------------------------------------------------------
-Z0_KM    = 33.0     # normal continental crust at sea level
-RHO_C    = 2850.0   # bulk continental crust  (kg/m³)
-RHO_M    = 3300.0   # asthenospheric mantle   (kg/m³)
+# Densities are the reference-column values published with LithoRef18:
+#
+#     Afonso, J.C., Salajegheh, F., Szwillus, W., Ebbing, J. & Gaina, C.
+#     (2019). A global reference model of the lithosphere and upper mantle
+#     from joint inversion and analysis of multiple data sets.
+#     Geophysical Journal International 217, 1602-1628.
+#
+# The file's own header line gives
+#     Moho_r, LAB_r, Crust_den_r, LM_den_r, Asth_den_r:
+#     -22493.28  -112922.54  2848.11  3324.93  3447.83
+# so 2848.11 kg/m3 is Afonso's reference continental crustal density and
+# 3324.93 kg/m3 his reference lithospheric mantle density.  Using them
+# rather than round numbers ties this inversion to a published, internally
+# consistent reference model derived from a joint inversion of gravity,
+# geoid, elevation, surface heat flow and seismic data, instead of to
+# values chosen by convention.
+#
+# RHO_M is the lithospheric mantle density, not the asthenospheric one:
+# the material displaced by a thickening crust sits immediately below the
+# Moho.  Afonso's asthenospheric value (3447.83) belongs to a deeper
+# compensation level and is not the right contrast for crustal Airy.
+#
+# On present-day LithoRef18 cells outside cratons and shields these
+# choices are not separable from the previous 2850/3300 pair -- robust
+# residual scatter 774 m against 737 m, between-province spread 606 m
+# against 610 m -- so the case for them is provenance, not fit.  A fit
+# comparison would in any case be weak evidence, because LithoRef18 was
+# jointly inverted using elevation and is therefore not independent of an
+# isostatic test.
+#
+# Note that these constants govern only this elevation-to-thickness
+# inversion.  The forward geochemical thickness-to-elevation conversion is
+# precomputed upstream in the sample table, where each of the six columns
+# carries its own published density structure.
+Z0_KM    = 33.0        # normal continental crust at sea level
+RHO_C    = 2848.11     # LithoRef18 reference continental crust   (kg/m³)
+RHO_M    = 3324.93     # LithoRef18 reference lithospheric mantle (kg/m³)
 RHO_W    = 1030.0   # sea water               (kg/m³)
 
 # Physical clipping of the output.  Crustal thickness < 0 is unphysical,
@@ -149,15 +184,16 @@ def process_one(age_ma: int):
         d.createDimension("lon", lon.size)
         d.createVariable("lat", "f4", ("lat",))[:] = lat
         d.createVariable("lon", "f4", ("lon",))[:] = lon
-        v = d.createVariable("z_c", "f4", ("lat", "lon"))
+        _z = dict(zlib=True, complevel=4)  # lossless DEFLATE, ~5x smaller
+        v = d.createVariable("z_c", "f4", ("lat", "lon"), **_z)
         v.units = "km"
         v.long_name = "crustal thickness, Airy isostasy on M_corrected"
         v[:] = z_c
-        v2 = d.createVariable("h_m", "f4", ("lat", "lon"))
+        v2 = d.createVariable("h_m", "f4", ("lat", "lon"), **_z)
         v2.units = "m"
         v2.long_name = "corrected paleo-elevation (echo of M_corrected)"
         v2[:] = Mc
-        v3 = d.createVariable("continent_mask", "i1", ("lat", "lon"))
+        v3 = d.createVariable("continent_mask", "i1", ("lat", "lon"), **_z)
         v3[:] = cont.astype(np.int8)
         d.target_age_Ma   = float(age_ma)
         d.z_0_km          = Z0_KM
