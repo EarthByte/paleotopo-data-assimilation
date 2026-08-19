@@ -203,11 +203,19 @@ PROV_TAPER_CELLS = 2                # ~220 km fade distance.  Kept SMALL
                                     # geological boundaries in the corrected
                                     # maps.  Do not set this to 0 without
                                     # inspecting the resulting dz maps.
-DROP_CRATON_SAMPLES = True          # Exclude geochemical samples that fall
+DROP_CRATON_SAMPLES = os.environ.get("PALEO_DROP_CRATON", "1") == "1"
+                                    # Exclude geochemical samples that fall
                                     # inside a Shirmard et al. (2025) craton
                                     # outline.  See prepare_samples() and
-                                    # shirmard_cratons.py.  Set False to
-                                    # restore the pre-exclusion behaviour.
+                                    # shirmard_cratons.py.
+                                    #
+                                    # Env-overridable so the exclusion can be
+                                    # A/B'd against the previous behaviour
+                                    # without editing the source, in the same
+                                    # spirit as PALEO_CORRECTED_DIR:
+                                    #   PALEO_DROP_CRATON=0 ... assimilate_scotese.py 240
+                                    # writes the unexcluded field, and the two
+                                    # runs differ in exactly this one flag.
 
 W_MISSING_OVER40 = 0.25
 # Floor for cells that were subaerial (M_orig > 0) in the kinematic
@@ -328,7 +336,34 @@ PROVINCE_CLASSIFIER = "geomorphic"   # or "hasterok"
 #     CDF rescaling correction (the kinematic prior is preserved); the
 #     smoothed-residual kernel (150 km) handles local fine structure
 #     on top.  Set LOCAL_SUPPORT_KM = None or 0 to disable.
-LOCAL_SUPPORT_KM = 1000.0
+LOCAL_SUPPORT_KM = float(os.environ.get("PALEO_LOCAL_SUPPORT_KM", "400"))
+#     400 km = 2-3x the 150 km residual-kernel sigma, chosen so the rescaling
+#     reaches about as far as the observations can actually speak, and wide
+#     enough to stay active across a typical orogen.  A 240/220 Ma sweep over
+#     1000/750/500/400/300/200 km showed the fit is essentially flat -- bias
+#     457->474 m, RMS 1390->1393 m across the whole range -- while the share of
+#     continental cells receiving zero rescaling rises 75%->97%.  The former
+#     1000 km reach was therefore an unconstrained degree of freedom: it spread
+#     hundreds of metres of correction over cells whose fit it did not improve.
+#     p99 is the only metric that moves coherently and it minimises here
+#     (240 Ma 2796->2727 m, 220 Ma 2873->2796 m), rising again below 300 km.
+#     Note these diagnostics are measured against the assimilated observations,
+#     so they corroborate the choice rather than validate it independently.
+#     At 400 km about 91% of continental cells receive no CDF rescaling and the
+#     correction is dominated by the 150 km residual kernel.
+#     Env-overridable so the radius can be chosen by measurement rather than
+#     assertion:  PALEO_LOCAL_SUPPORT_KM=400 ... assimilate_scotese.py 240
+#
+#     Why this matters more than it looks.  Measured at 240 Ma, 82% of
+#     continental cells have no declustered sample within kernel reach
+#     (n_eff = 0) and their median |dz| is 0.1 m -- but 17.8% of them still
+#     carry |dz| > 50 m, p95 310 m, delivered purely by this long-range
+#     rescaling gate.  That is the mechanism by which cratonic cells, which
+#     contain almost no Phanerozoic magmatic samples of their own (1.65% of
+#     the sample pool globally, 1 of 1668 in the 240 Ma window), still
+#     receive corrections of several hundred metres from observations with
+#     no bearing on them.  At 1000 km the gate reaches roughly seven times
+#     further than the 150 km residual kernel.
 
 
 def dt_half(t):
