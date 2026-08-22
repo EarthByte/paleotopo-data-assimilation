@@ -14,6 +14,11 @@ components are restricted to the **Phanerozoic, 0–540 Ma**:
 
 > **Zenodo DOI:** `TBA` (to be filled in once the deposit is published).
 
+One further dataset is small enough to ship with the repository rather than
+through the Zenodo deposit: the inferred craton outlines of Shirmard et al.
+(2025), in `Shirmard_cratons/` (232 KB). They are cited to their own archive,
+doi:10.5281/zenodo.15003746; see `Shirmard_cratons/README.md`.
+
 After downloading the Zenodo archive, extract it into this `data/`
 folder so the layout becomes:
 

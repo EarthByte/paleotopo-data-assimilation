@@ -19,7 +19,7 @@ Three problems make a naive "spread the residual" interpolation unsafe:
 2. **Heavy spatial clustering.** Many samples come from the same outcrop, formation, or arc segment. Treating each row as independent over-weights well-studied terranes (e.g. SW USA, Tibet) and can drag the correction surface unphysically.
 3. **Geological-shape preservation.** The kinematic model carries information about *where* mountains, cratons and basins sit; we must not destroy that pattern by smearing point corrections across province boundaries. A plateau is a flat top with steep flanks; a craton is a broad gentle bulge — the corrections must inherit these signatures.
 
-The chosen strategy — **province-wise hypsometric rescaling with a province-aware smoothed residual field, capped and quality-weighted** — addresses all three.
+The chosen strategy — **province-wise hypsometric rescaling with an isotropic smoothed residual field, capped and quality-weighted** — addresses all three.
 
 ---
 
@@ -27,7 +27,7 @@ The chosen strategy — **province-wise hypsometric rescaling with a province-aw
 
 The kinematic S&W18 map has the right *shape* — mountain belts in the right places with the right footprint — but the wrong *amplitude distribution* (its 99th-percentile elevation on land is ~2 km against an Earth-like ~4 km). The geochem data has the right *amplitude distribution* (because it's calibrated against Earth's modern crustal thickness ↔ elevation relation) but lacks spatial coverage and detail.
 
-We therefore use the geochem data to **rescale the elevation distribution of each tectonic province on the kinematic map** so that its hypsometry matches the geochem hypsometry for the same province at the same time. The rescaling is applied as a **smooth correction field** whose spatial structure is set by where the geochem observations actually live (cluster centroids), with a province-specific correlation length.
+We therefore use the geochem data to **rescale the elevation distribution of each tectonic province on the kinematic map** so that its hypsometry matches the geochem hypsometry for the same province at the same time. The rescaling is applied as a **smooth correction field** whose spatial structure is set by where the geochem observations actually live (cluster centroids), with a single isotropic correlation length.
 
 Five elements of the design:
 
@@ -35,11 +35,13 @@ a. **Adaptive temporal window.** Window half-width grows with data sparsity, so 
 
 b. **Cluster-aware declustering.** Samples are pre-aggregated by paleo-coord cell (and, optionally, by Tecto_Prov within the cell) so that one densely-studied outcrop becomes one observation rather than 50.
 
-c. **Ensemble-mean elevation with explicit uncertainty.** Per-sample elevation = mean over the six geochem models; per-sample σ = max(model spread, z0_min/max envelope, Missing_Risk_DeltaT scaled). σ feeds the observation weight.
+c. **Ensemble-mean elevation with explicit uncertainty.** Per-sample elevation = mean over the six geochem models; per-sample σ = the model spread, the low/high crustal-thickness envelope and the scaled Missing_Risk_DeltaT term combined in quadrature, then clipped to [200, 4000] m. σ feeds the observation weight as 1/σ².
 
 d. **Province-wise CDF matching, not point interpolation.** Within each province (Orogen, Shield, Continental Arc, Extended Crust, Platform, …) we map the kinematic-prior CDF onto the geochem CDF. This guarantees that the *distribution* of corrected elevations per province matches the data, while the *spatial pattern* of relative high/low elevations within the province is inherited from the kinematic model.
 
-e. **Constrained smoothing.** The point-cluster residuals (geochem − kinematic) are interpolated with a province-aware Gaussian process / radial-basis kernel: short correlation length in orogens (≈300 km), long in shields (≈1000 km), and the kernel is masked to avoid bleeding across province boundaries or the COB.
+e. **Constrained smoothing.** The point-cluster residuals (geochem − kinematic) are interpolated with a single isotropic Gaussian kernel of 150 km length scale, masked to the continental footprint but deliberately *not* to province boundaries. Province-limited kernels were tested and rejected: they produce rectangular, cell-aligned cut-outs around samples sitting near a province edge. Province-distinct bulk corrections are handled by the CDF rescaling in Stage D instead, so the kernel is free to cross boundaries.
+
+f. **Cratons are excluded from the correction.** Cratonic surface elevation is not set by crustal thickness. Mooney and Vidale (2003) show cratons sit 300–1500 m below the elevation predicted by pure crustal isostasy because sub-crustal density carries the compensation, so a chemical-mohometry thickness has no skill there and the Airy conversion is biased high. Samples falling inside the seismically inferred craton outlines of Shirmard et al. (2025) are dropped before declustering, at present-day coordinates. This is a selection applied to observations only: no mask or taper is applied to the correction field, so no boundary artefact is introduced.
 
 ---
 
@@ -102,35 +104,35 @@ This step makes the province hypsometry match the data. The relative ordering of
 
 #### Guard rails on the rescaling map
 
-- `T_p` is constructed only if *p* has ≥ N_min,p declustered samples (e.g. 30); otherwise `T_p = identity` (no province-wide correction; the residual interpolation in Stage E still applies locally).
-- Capped: `|T_p(z) − z| ≤ Δ_max` with Δ_max = 2 km (user prior).
-- Linearly tapered to identity in the lowermost / uppermost 5 % of `F_M,p` to avoid extrapolation artefacts at the tails.
+- `T_p` is constructed only if *p* has an effective sample count `N_eff ≥ N_MIN_P = 3`; below that `T_p = identity` (no province-wide correction; the residual interpolation in Stage E still applies locally). Between `N_MIN_P` and `N_FULL_P = 30` the correction is scaled linearly from zero to full, so a province supported by three observations is not treated like one supported by thirty.
+- Capped: `|T_p(z) − z| ≤ Δ_max` with Δ_max = 2 km.
+- Linearly tapered to identity in the lowermost / uppermost 2 % of `F_M,p` to avoid extrapolation artefacts at the tails.
+- **Local-support gate.** The rescaling is further multiplied by `w(d) = clip(1 − d / L, 0, 1)`, where *d* is the great-circle distance from the cell to the nearest declustered sample and `L = 400 km`. Cells beyond *L* receive no rescaling at all and keep the kinematic prior. Without this gate a province-wide transfer is applied to every cell in the province, including cells thousands of kilometres from any observation. *L* was reduced from 1000 km to 400 km after a sweep at 220 and 240 Ma showed the fit to the assimilated observations is flat across 1000–200 km (bias 457→474 m, RMS 1390→1393 m) while the share of continental cells receiving zero rescaling rises from 75 % to 97 % — the longer reach was distributing hundreds of metres over cells whose fit it did not improve. 400 km is two to three times the 150 km residual-kernel length scale.
+- **Province-edge taper.** Each province's rescaling is multiplied by a weight that falls to zero within two cells of a boundary with a different province, so adjacent provinces' corrections meet at zero rather than at two different values. A subsequent continent-masked Gaussian pass of 3 cells bridges the neutral band this leaves.
 
-### Stage E — Local residual field with province-aware smoothing
+### Stage E — Local residual field with isotropic smoothing
 
 The CDF-matched field `M'` has the right hypsometry but ignores the local sample density. We refine it with a smooth correction field built from sample-level residuals.
 
 E1. At each cluster centroid *c_j*, compute the residual `r_j = z̄_j − M'(c_j)`, with weight `w_j` and uncertainty `σ_j` from Stage B.
-E2. Interpolate `r` onto the grid using a province-aware Gaussian kernel:
+E2. Interpolate `r` onto the grid using an isotropic Gaussian kernel:
    `r̂(c) = Σ_j K(c, c_j) · w_j · r_j  /  Σ_j K(c, c_j) · w_j`
    with
-   `K(c, c_j) = exp(−d(c,c_j)² / (2 ℓ(P(c))²))` and
-   `K = 0` if `P(c) ≠ P(c_j)` (don't bleed between provinces) or if `c` is outside the COB.
-   Length scales `ℓ`:
-   - Continental Arc: 250 km
-   - Orogen: 350 km
-   - Continental Margin: 400 km
-   - Extended Crust: 500 km
-   - Platform: 800 km
-   - Shield: 1000 km
-   These are deliberately aligned with the natural along-strike / across-strike scales of those features.
+   `K(c, c_j) = exp(−d(c,c_j)² / (2 ℓ²))`, `ℓ = 150 km`, truncated at 5ℓ, and
+   `K = 0` only where `c` is outside the continental footprint.
+   The kernel is **not** masked by province. A province-limited kernel was
+   implemented and rejected: it produces rectangular, cell-aligned cut-outs
+   wherever a sample sits near a province edge. Province-distinct bulk
+   corrections are the job of the Stage D transfer, not of this kernel.
 E3. Effective number of samples behind each cell `N_eff(c) = (Σ K w)² / Σ (K w)²`. Where `N_eff < 1`, taper the residual smoothly to zero (no observational support).
 
 ### Stage F — Final field
 
 `M_final(c) = M'(c) + α(c) · r̂(c)`
 
-where `α(c)` is a confidence weight in [0,1] that uses both data support (`α → 1` as `N_eff → ∞`) and a hard cap so that `|M_final − M| ≤ Δ_max = 2 km` and `M_final ∈ [−6000, +7000]` m.
+where `α(c)` is a confidence weight in [0,1] that uses both data support (`α → 1` as `N_eff → ∞`) and a hard cap so that `|M_final − M| ≤ Δ_max = 2 km` and `M_final ∈ [−11000, +11000]` m.
+
+Δz is then smoothed in two continent-masked Gaussian passes, of 1.5 and 4.5 cells (≈165 and ≈495 km), which compose in quadrature to an effective ≈4.7 cells (≈520 km); a 5×5 median filter despeckles it; corrections are faded out over water deeper than 500 m; and cells that were subaerial in the kinematic prior are held at or above 1 m so the assimilation never floods land the prior establishes as dry.
 
 Outside the COB the field is left untouched (option to extrapolate gently in Stage G if the user wants).
 
@@ -152,7 +154,7 @@ Stage G also generates a global `metadata.json` recording all parameters used so
 |------|----------------|
 | Corrections only on continent | Mask by COB at time *t*; oceanic cells of the kinematic field pass through untouched. |
 | Province-specific correlation length | `ℓ(P)` table in Stage E. |
-| Cap on |Δz| | `Δ_max = 2 km`, hard floor/ceiling at −6 km / +7 km. |
+| Cap on |Δz| | `Δ_max = 2 km`, hard floor/ceiling at −11 km / +11 km. |
 | Down-weight low-quality samples | `Missing_Over40pct → ×0.25`; `Missing_Risk_DeltaT` enters σ_quality and clips at 5 km. |
 
 Optional (off by default, easy to toggle):
@@ -180,18 +182,22 @@ Optional (off by default, easy to toggle):
 
 ---
 
-## 7. Parameter table (defaults used in the proof-of-concept)
+## 7. Parameter table (production defaults)
 
 | Symbol | Meaning | Default |
 |--------|--------|---------|
 | Δt(t) | adaptive temporal half-window | 5/10/20/30 Myr (see table) |
 | N_min | min samples per temporal bin | 200 |
-| N_min,p | min declustered samples per province for D | 30 |
+| N_MIN_P | min effective declustered samples per province for D | 3 (full weight at N_FULL_P = 30) |
 | Δ_max | per-cell elevation cap | 2 km |
-| z_min, z_max | hard floor/ceiling | −6 km, +7 km |
-| ℓ(P) | length scale per province | 250–1000 km (see Stage E) |
+| z_min, z_max | hard floor/ceiling | −11 km, +11 km |
+| ℓ | residual-kernel length scale (isotropic) | 150 km |
+| L | local-support radius for the Stage D rescaling | 400 km |
+| — | province-edge taper / cross-boundary bridge | 2 cells / 3 cells |
+| — | Δz smoothing passes | 1.5 and 4.5 cells (≈520 km combined) |
+| — | craton outlines excluded from the observations | Shirmard et al. (2025) |
 | α decay | residual taper as N_eff → 0 | 1 − exp(−N_eff) |
 | κ | quality penalty coefficient | 0.3 km/km |
 | ω_quality | weight for `Missing_Over40pct = TRUE` | 0.25 |
 
-The proof-of-concept (`assimilate_poc.py`) implements the pipeline end-to-end on the 50 Ma slice. It writes a corrected NetCDF and a multi-panel QC PNG.
+`scripts/assimilate_scotese.py` implements the workflow end-to-end. `PALEO_CORRECTED_DIR`, `PALEO_LOCAL_SUPPORT_KM` and `PALEO_DROP_CRATON` allow the output directory, the support radius and the craton exclusion to be varied for A/B tests without editing the source.

@@ -40,6 +40,13 @@ Zhou, J, Farahbakhsh, E., ..., Müller, R.D., 2026. Recurrent super highlands si
 - Methodology includes: temporal weighting kernel, smooth
   shrinkage between N=3 and N=30 declustered samples, province pooling
   for related tectonic settings, adaptive sample-count thresholds.
+- Cratons are excluded from the correction. Cratonic elevation is carried by
+  sub-crustal density rather than crustal thickness (Mooney and Vidale, 2003),
+  so samples inside the seismically inferred craton outlines of Shirmard et al.
+  (2025) are dropped before declustering.
+- The province rescaling is gated to 400 km from the nearest observation, so a
+  province-wide hypsometric transfer is not applied to cells no sample can
+  constrain.
 - 109 corrected NetCDFs for the full Phanerozoic at 5 Myr cadence,
   reproducible from a single shell command in ~5 minutes on a laptop.
 - Demonstration application: a spatially-resolved Phanerozoic
@@ -244,10 +251,16 @@ production values used for the Phanerozoic sweep released with the paper:
 | `N_MIN_P` | 3 | min Kish-effective samples per province for any rescaling |
 | `N_FULL_P` | 30 | full-amplitude rescaling above this n_eff (smooth shrinkage in between) |
 | `PROVINCE_POOLING` | True | allow related provinces to pool samples (down-weight 0.3) |
-| `LOCAL_SUPPORT_KM` | 1000.0 km | rescaling correction fades to zero beyond this distance from samples |
+| `LOCAL_SUPPORT_KM` | 400.0 km | rescaling correction fades to zero beyond this distance from samples; override with `PALEO_LOCAL_SUPPORT_KM` |
 | `PROV_TAPER_CELLS` | 2 | distance (in cells, ~110 km each) over which each province's correction fades to zero at its boundary |
 | `CROSS_BOUNDARY_SIGMA` | 3.0 cells | Gaussian σ that bridges the post-taper neutral band at province boundaries |
 | `PROVINCE_CLASSIFIER` | `"geomorphic"` | `"geomorphic"` (9 cat.) or `"hasterok"` (15 cat., Hasterok et al. 2022 ESR shapefile) |
+
+### Observation selection
+
+| Parameter | Default | Role |
+|---|---|---|
+| `DROP_CRATON_SAMPLES` | True | drop samples inside the Shirmard et al. (2025) craton outlines before declustering; override with `PALEO_DROP_CRATON` |
 
 ### Residual kernel
 
