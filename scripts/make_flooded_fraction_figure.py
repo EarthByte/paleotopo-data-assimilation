@@ -45,7 +45,7 @@ USAGE
 OPTIONS
     --ages INT ...              ages to evaluate (default 500 400 300 200 100 50)
     --combined-dir PATH         directory of <age>Ma_corrected_plus_dyntopo_SW.nc
-                                (default: PROJECT_ROOT/data/corrected_Scotese_plus_dyntopo)
+                                (default: PROJECT_ROOT/data/corrected_plus_dyntopo)
     --no-pdf                    skip PDF export
     --no-png                    skip PNG export
     --no-csv                    skip CSV export
@@ -125,7 +125,7 @@ def load_age(combined_dir: Path, age: int):
     with nc.Dataset(f) as d:
         Mc    = np.asarray(d["M_corrected"][:], dtype=float)
         Mcomb = np.asarray(d["M_combined"][:], dtype=float)
-    corrected_sw = (PROJECT_ROOT / "data" / "corrected_Scotese"
+    corrected_sw = (PROJECT_ROOT / "data" / "corrected"
                     / f"{int(age)}Ma_corrected_SW.nc")
     if corrected_sw.exists():
         with nc.Dataset(corrected_sw) as d:

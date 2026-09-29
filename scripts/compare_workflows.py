@@ -43,8 +43,8 @@ USAGE
     python compare_workflows.py --merdith-dir /custom/path
 
 This script is *optional* — only run it if you have BOTH the Merdith
-corrected NetCDFs (in `data/corrected/`) and the S&W corrected NetCDFs
-(in `data/corrected_Scotese/`).
+corrected NetCDFs (in `data/corrected_merdith_geochem/`) and the S&W corrected NetCDFs
+(in `data/corrected/`, paths_scotese.CORRECTED_DIR).
 
 DEPENDENCIES
     numpy, pandas, netCDF4, matplotlib, cartopy (for the optional maps)
@@ -75,7 +75,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from paths_scotese import CORRECTED_DIR as SW_DIR, OUTPUT_DIR
 
 # Merdith path — by default sibling of the S&W folder under data/
-MERDITH_DIR_DEFAULT = SW_DIR.parent / "corrected"
+MERDITH_DIR_DEFAULT = SW_DIR.parent / "corrected_merdith_geochem"
 
 
 def era_of(t):

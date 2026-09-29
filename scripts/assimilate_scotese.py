@@ -116,18 +116,22 @@ RESID_LS_KM = 150.0      # per-sample residual-kernel σ (km).  Narrow
                          # kernel keeps local sample-driven structure
                          # tight; the smoothing of `r` after deposition
                          # (in assimilate_one) blends adjacent samples
-                         # at a larger scale (DELTA_SMOOTH_SIGMA_FINAL).
+                         # at a larger scale.
+# Reach of the residual kernel: kept whole within RESID_REACH_KM[0] km of the
+# nearest declustered sample and tapered linearly to zero at RESID_REACH_KM[1] km.
+# Igneous rock chemistry samples the magmatic belts and not the basins between
+# them, so the correction is confined to where samples constrain it. The choice
+# was tested against held-out samples (five folds of 6-degree blocks, every age
+# 5-540 Ma: RMS within 150 km of samples +0.7 % against an unlimited reach) and
+# against independent sediment thickness, which the unlimited reach predicted
+# worse. (0, 0) switches the taper off.
+RESID_REACH_KM = (250.0, 500.0)
 KAPPA_QUALITY = 300.0
 DELTA_SMOOTH_SIGMA       = 1.5      # first  pass on Δz: σ in cells (~165 km)
-DELTA_SMOOTH_SIGMA_FINAL = 4.5      # final  pass on Δz: σ in cells (~495 km)
-                                    # Moderate.  Down from 6.0 — earlier
-                                    # σ=6 bled corrections too far into
-                                    # neighbouring unsampled regions.
-                                    # σ=4.5 still bridges the taper-
-                                    # induced neutral band (~4 cells)
-                                    # at province edges, but with a
-                                    # tighter falloff to keep
-                                    # corrections more local.
+DELTA_SMOOTH_SIGMA_FINAL = 0.0      # final pass on Δz: off (a σ of several
+                                    # cells spreads the correction of the
+                                    # magmatic belts into the basins between
+                                    # them; see RESID_REACH_KM).
 FINAL_LAND_SMOOTH_SIGMA  = 0.0      # DISABLED — the M_final-subaerial-only
                                     # smoothing was rejected (it blurred
                                     # large continent tracts uniformly
@@ -145,11 +149,10 @@ DELTA_MEDIAN_WINDOW = 5             # 5x5 median-filter despeckle on Δz.
 # bridge across the thin neutral band the taper leaves at province
 # boundaries.  It is masked to the continent only (not to provinces),
 # so it freely crosses province boundaries.  Set to 0 to disable.
-CROSS_BOUNDARY_SIGMA = 3.0          # σ in cells (~330 km).  Moderately
-                                    # reduced from 4.0 to keep
-                                    # corrections more local while still
-                                    # bridging the post-taper neutral band
-                                    # at province boundaries.
+CROSS_BOUNDARY_SIGMA = 1.5          # σ in cells (~165 km): bridges the
+                                    # post-taper neutral band at province
+                                    # boundaries while keeping corrections
+                                    # local.
 
 # Province-edge taper.  Each province's CDF rescaling correction is
 # multiplied by a per-cell weight that fades from 1 (deep in the
@@ -204,6 +207,14 @@ PROV_TAPER_CELLS = 2                # ~220 km fade distance.  Kept SMALL
                                     # maps.  Do not set this to 0 without
                                     # inspecting the resulting dz maps.
 DROP_CRATON_SAMPLES = os.environ.get("PALEO_DROP_CRATON", "1") == "1"
+
+# Samples on the prior's sea. A declustered sample whose cell the kinematic prior puts at or below sea level
+# (M_orig <= 0) is dropped after declustering. The prior's shorelines come from facies, and the depth fade in
+# finalise() keeps the prior's seas (no correction below -DEPTH_FADE_M), so such a sample cannot be honoured at its own
+# cell; dropping it also keeps its residual from being spread onto the adjacent coastal lowland. Tested against held-out
+# samples (on land within 150 km of a training sample: RMS unchanged, +0.0 %) and against independent sediment
+# thickness (better globally, no continent worse). PALEO_DROP_SEA_SITED=0 keeps them.
+DROP_SEA_SITED_SAMPLES = os.environ.get("PALEO_DROP_SEA_SITED", "1") == "1"
                                     # Exclude geochemical samples that fall
                                     # inside a Shirmard et al. (2025) craton
                                     # outline.  See prepare_samples() and
@@ -654,7 +665,7 @@ def decluster(df, lat, lon):
 #       with related provinces (PROVINCE_POOLS) using POOL_DOWNWEIGHT on
 #       the non-native contributions.
 # ---------------------------------------------------------------------------
-def _samples_for_province(dec, prov, use_pooling: bool = PROVINCE_POOLING):
+def _samples_for_province(dec, prov, use_pooling=None):
     """Return a DataFrame of declustered samples to use when building the
     target CDF for province `prov`.  Native samples carry their original
     weight; pooled (non-native) samples are down-weighted by POOL_DOWNWEIGHT.
@@ -662,6 +673,8 @@ def _samples_for_province(dec, prov, use_pooling: bool = PROVINCE_POOLING):
     The pooling table is the active classifier's (geomorphic or
     hasterok), not the module-level PROVINCE_POOLS constant.
     """
+    if use_pooling is None:                 # read when called, so a setting on the module takes effect
+        use_pooling = PROVINCE_POOLING
     native = dec[dec["prov"] == prov].copy()
     if native.empty or not use_pooling:
         return native
@@ -684,11 +697,18 @@ def _kish_n_eff(w: np.ndarray) -> float:
 
 
 def province_rescale(M, P_grid, dec, cont_mask,
-                     n_min_p: int = N_MIN_P, n_full_p: int = N_FULL_P,
-                     use_pooling: bool = PROVINCE_POOLING):
+                     n_min_p=None, n_full_p=None, use_pooling=None):
     """Province-wise CDF rescaling.  Iterates over the ACTIVE
     classifier's PROV_LIST (geomorphic 9-category or Hasterok 16-category)
     so the function transparently handles either backend."""
+    # Arguments left as None are read from the module when called (not when it
+    # was imported), so a configuration set on the module takes effect.
+    if n_min_p is None:
+        n_min_p = N_MIN_P
+    if n_full_p is None:
+        n_full_p = N_FULL_P
+    if use_pooling is None:
+        use_pooling = PROVINCE_POOLING
     _PL, _PI, _POOLS, _GRIDFN, _ = _active_classifier()
     Mp = M.copy()
     for prov_idx, prov in enumerate(_PL):
@@ -1016,7 +1036,12 @@ def apply_young_taper(t, M_orig, M_final, cont_mask):
 # ---------------------------------------------------------------------------
 # Per-slice orchestrator
 # ---------------------------------------------------------------------------
-def assimilate_one(t, save_nc=True):
+def assimilate_one(t, save_nc=True, stages=None):
+    """Assimilate one age.  If `stages` is a dict it is filled with the
+    intermediate fields of this run (for figures that show the chain):
+    M, cont, dec, P (province raster), M3 (the province rescaling after the
+    support gate, edge taper and cross-boundary smoothing), r (the residual
+    after its reach taper) and M_final."""
     t0 = time.time()
     M, lat, lon = sw_load_grid(t)
     cont = cob_mask(t, lat, lon, M)
@@ -1085,6 +1110,7 @@ def assimilate_one(t, save_nc=True):
 
     df = prepare_samples(get_geochem(), t)
     print(f"[{t:5.0f} Ma] samples in window ±{dt_half(t):.0f} Myr: {len(df)}")
+    n_window, n_oceanic, n_sea_sited = len(df), 0, 0
     if not df.empty:
         # Validation: samples whose reconstructed position lands offshore
         # are a sign of plate-ID misassignment.  Drop and warn.
@@ -1118,6 +1144,16 @@ def assimilate_one(t, save_nc=True):
         n_eff_grid = np.zeros_like(M); dec = pd.DataFrame()
     else:
         dec = decluster(df, lat, lon)
+        if DROP_SEA_SITED_SAMPLES and not dec.empty:
+            _sea = M[dec["iy"].astype(int).values, dec["ix"].astype(int).values] <= 0
+            n_sea_sited = int(_sea.sum())
+            dec = dec[~_sea].reset_index(drop=True)
+            print(f"             {n_sea_sited} declustered samples on the prior's sea (M_orig <= 0) dropped; {len(dec)} kept")
+    if not df.empty and dec.empty:
+        M_final = M.copy()
+        P_g = np.where(cont, _PI.get("Other", 0), -1).astype(np.int8)
+        n_eff_grid = np.zeros_like(M)
+    elif not df.empty:
         print(f"             declustered: {len(dec)} ({dec['prov'].value_counts().to_dict()})")
         print(f"             classifier:  {PROVINCE_CLASSIFIER}  "
               f"({len(_PL)} provinces)")
@@ -1169,7 +1205,13 @@ def assimilate_one(t, save_nc=True):
             M3 = M + dz_prov
 
         r, n_eff_grid = smoothed_residual(M3, P_g, dec, lat, lon, cont, ls_km=RESID_LS_KM)
+        if RESID_REACH_KM and RESID_REACH_KM[1] > 0:
+            d0, d1 = RESID_REACH_KM
+            dist_r = nearest_sample_distance_grid(lat, lon, dec)
+            r = r * np.clip((d1 - dist_r) / max(d1 - d0, 1e-6), 0.0, 1.0)
         M_final = finalise(M, M3 + r, cont)
+        if stages is not None:
+            stages.update(M3=M3.copy(), r=r.copy(), M_pre_taper=M_final.copy())
 
     # Young-age correction taper: ramp the geochem correction to zero at
     # 0 Ma (removes the present-day-bypass discontinuity for chained /
@@ -1182,6 +1224,9 @@ def assimilate_one(t, save_nc=True):
         M_final = apply_young_taper(t, M, M_final, cont)
         print(f"             young-age taper: ramp({t:.0f} Ma)={_r_taper:.3f} "
               f"→ correction scaled to {100*_r_taper:.0f} %")
+
+    if stages is not None:
+        stages.update(M=M, cont=cont, dec=dec, P=P_g, M_final=M_final)
 
     elapsed = time.time() - t0
     # Diagnostics
@@ -1198,6 +1243,7 @@ def assimilate_one(t, save_nc=True):
     summary = dict(
         t_Ma=int(round(t)), wall_s=elapsed,
         n_samples=int(len(df)), n_decluster=int(len(dec)) if not dec.empty else 0,
+        n_window=int(n_window), n_offshore=int(n_oceanic), n_sea_sited=int(n_sea_sited),
         continent_cells=int(cont.sum()),
         bias_before_m=bias_before, bias_after_m=bias_after,
         rms_before_m=rms_before,   rms_after_m=rms_after,
@@ -1230,7 +1276,12 @@ def assimilate_one(t, save_nc=True):
                         f"n_min_p={N_MIN_P}; cob_proxy={COB_PROXY_M}m; "
                         f"local_support_km={LOCAL_SUPPORT_KM}; "
                         f"depth_fade_m={DEPTH_FADE_M}; "
-                        f"classifier={PROVINCE_CLASSIFIER}")
+                        f"classifier={PROVINCE_CLASSIFIER}; "
+                        f"area_debias=0; "
+                        f"resid_amplitude=kish; resid_reach_km={RESID_REACH_KM[0]:g}-{RESID_REACH_KM[1]:g}; "
+                        f"delta_sigma={DELTA_SMOOTH_SIGMA:g}/{DELTA_SMOOTH_SIGMA_FINAL:g}; "
+                        f"cross_boundary_sigma={CROSS_BOUNDARY_SIGMA:g}"
+                        + ("; sea_sited_samples=dropped" if DROP_SEA_SITED_SAMPLES else ""))
             f.young_taper_t_full_Ma = float(YOUNG_TAPER_T_FULL)
             f.young_taper_ramp = float(young_taper_ramp(t))
     return summary, M, M_final, P_g, cont, dec

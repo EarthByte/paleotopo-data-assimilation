@@ -51,12 +51,12 @@ USAGE
                                                          # 500 Ma)
 
 OUTPUTS
-    data/corrected/<age>Ma_crustal_thickness_SW.nc
+    data/corrected_merdith_geochem/<age>Ma_crustal_thickness_SW.nc
         lat, lon  (f4)   paleo-coordinate axes
         z_c       (f4)   crustal thickness in km (NaN over ocean)
         h_m       (f4)   M_corrected echoed back (m) for traceability
         continent_mask   (i1)
-    paper/Scotese/Fig11_derived_crustal_thickness.png   (--figure only)
+    Figures/Fig11_derived_crustal_thickness.png   (--figure only)
 =============================================================================
 """
 from __future__ import annotations
@@ -67,7 +67,7 @@ import netCDF4 as nc
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, PAPER_FIG_DIR
 
 # ---------------------------------------------------------------------------
 # Airy-isostasy constants, taken from the LithoRef18 reference column
@@ -264,7 +264,7 @@ def make_preview_figure(ages=(50, 100, 200, 300, 400, 500)):
     fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.10,
                         hspace=0.18, wspace=0.05)
 
-    out_dir = OUTPUT_DIR.parent / "paper" / "Scotese"
+    out_dir = PAPER_FIG_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     out_png = out_dir / "Fig11_derived_crustal_thickness.png"
     fig.savefig(out_png, dpi=180, bbox_inches="tight")
@@ -282,10 +282,10 @@ def main():
     p.add_argument("age", nargs="?", type=int,
                    help="single slice age in Ma (omit + use --all for all slices)")
     p.add_argument("--all", action="store_true",
-                   help="process every corrected NetCDF in data/corrected/")
+                   help="process every corrected NetCDF in data/corrected_merdith_geochem/")
     p.add_argument("--figure", action="store_true",
                    help="also build the 6-panel preview figure "
-                        "(paper/Scotese/Fig11_derived_crustal_thickness.png)")
+                        "(Figures/Fig11_derived_crustal_thickness.png)")
     p.add_argument("--ages", type=int, nargs="+",
                    help="figure-only: choose your own six ages "
                         "(default: 50 100 200 300 400 500)")

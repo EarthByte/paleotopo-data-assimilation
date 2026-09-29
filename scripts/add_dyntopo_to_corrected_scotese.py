@@ -32,9 +32,9 @@ WHAT TO RUN INSTEAD
         --ages 5 25 50 75 100 150 200 250 300
 
 Output directory and NetCDF schema differ from this old script:
-    OLD: data/corrected_Scotese_plus_dyntopo/<age>Ma_corrected_plus_dyntopo_SW.nc
+    OLD: data/corrected_plus_dyntopo/<age>Ma_corrected_plus_dyntopo_SW.nc
          variables: M_corrected, z_dyntopo, z_dyntopo_anomaly, M_combined, continent_mask
-    NEW: data/corrected_Scotese_plus_dyntopo_diff_young/<age>Ma_corrected_plus_dyntopo_diff_young_SW.nc
+    NEW: data/corrected_plus_dyntopo_diff_young/<age>Ma_corrected_plus_dyntopo_diff_young_SW.nc
          variables: M_corrected, z_dyntopo_diff, M_combined  (CF-1.10 + ACDD-1.3)
 
 The figure scripts (make_comparison_figures_dyntopo.py,

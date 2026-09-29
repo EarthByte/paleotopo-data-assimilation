@@ -209,8 +209,6 @@ def main():
     ax.invert_xaxis()
     fig.colorbar(im, ax=ax, fraction=0.05, label="elevation (m)", extend="max")
 
-    plt.suptitle("Scotese & Wright assimilation — full-sweep diagnostics",
-                 fontsize=14, y=0.995)
     plt.tight_layout()
     out = FIGURES_DIR / "SW_full_sweep_diagnostics.png"
     plt.savefig(out, dpi=140, bbox_inches="tight")
@@ -234,7 +232,6 @@ def main():
             [0,    50,   300,  800,  1500, 2500, 3500, 5500],
             "--", color="black", label="Earth (modern, land only)", lw=1.2)
     ax.set_xlabel("cum. land area fraction"); ax.set_ylabel("elevation (m)")
-    ax.set_title("Corrected continental hypsometry at selected ages — land only (Scotese & Wright)")
     ax.grid(True, alpha=0.3); ax.legend(loc="upper left", fontsize=8)
     ax.set_ylim(0, 6000)
     plt.tight_layout()
@@ -257,7 +254,6 @@ def main():
         ax.boxplot(data, labels=eras, showfliers=False)
         ax.set_title(label, fontsize=11)
         ax.grid(True, alpha=0.3)
-    plt.suptitle("S&W assimilation — diagnostics by geological era", fontsize=14)
     plt.tight_layout()
     out = FIGURES_DIR / "SW_metrics_by_era.png"
     plt.savefig(out, dpi=140, bbox_inches="tight")

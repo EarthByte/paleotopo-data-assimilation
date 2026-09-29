@@ -71,7 +71,12 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # Plate-boundary topology overlay is drawn ONLY on the delta video,
 # in black, to match the Merdith delta convention.  Setting False
 # disables the overlay completely (e.g. if pygplates isn't installed).
-DRAW_SZ = True
+#
+# Disabled: the S&W plate model only resolves topologies for ages
+# <= ~100 Ma, so the overlay would show up in just the last ~20 % of
+# frames and then vanish - visually inconsistent.  The cartopy
+# renderer omits it for the same reason.
+DRAW_SZ = False
 
 import pygmt
 import xarray as xr
@@ -212,6 +217,23 @@ def compute_data_range(ages, modes):
           f"(elevation range fixed at {ELEVATION_RANGE[0]:.0f} … {ELEVATION_RANGE[1]:.0f} m)")
 
 
+# --- delta colour table -----------------------------------------------------
+GREY_CENTRE = "247/247/247"   # the RdBu_r mid-tone the cartopy preview uses
+
+
+def _grey_centre_polar(lo, hi, path="delta_polar_grey.cpt"):
+    """`polar` (blue-white-red) with a light grey centre instead of white.
+
+    Written as an explicit CPT rather than built with makecpt so the centre
+    colour is exact and the end members stay GMT's polar blue and red.
+    """
+    with open(path, "w") as fh:
+        fh.write(f"{lo} 0/0/255 0 {GREY_CENTRE}\n")
+        fh.write(f"0 {GREY_CENTRE} {hi} 255/0/0\n")
+        fh.write("B 0/0/255\nF 255/0/0\nN 255/255/255\n")
+    return path
+
+
 def render_frame(t: int, mode: str, frame_path: Path):
     """Render one frame. mode ∈ {'elevation', 'original', 'delta', 'elevation_samples'}."""
     ds = load_grid_xr(t)
@@ -252,7 +274,12 @@ def render_frame(t: int, mode: str, frame_path: Path):
         _Mc = ds["M_corrected"].values
         _land = (_Mo >= 0) | (_Mc >= 0)
         arr = np.where(_land, ds["delta"].values, np.nan)
-        cpt = "polar"; series = (d_lo, d_hi, d_step)
+        # GMT's `polar` is pure white at zero, so a land cell carrying no
+        # correction was indistinguishable from ocean and the continents
+        # vanished wherever dz ~ 0. Same ramp, but light grey at the centre,
+        # so the paleo-land footprint reads as a silhouette underneath the
+        # correction -- matching the cartopy preview of the same product.
+        cpt = _grey_centre_polar(d_lo, d_hi); series = (d_lo, d_hi, d_step)
         cb_label = "delta z (m)"
         overlay_samples = True
     else:
@@ -362,14 +389,17 @@ def render_frame(t: int, mode: str, frame_path: Path):
 def stitch_video(frame_pattern: Path, out_path: Path, fps: int, n_frames: int):
     """Explicit -frames:v n_frames so stale frames left by a previous
     cadence/age-range run don't get appended."""
-    cmd = ["ffmpeg", "-y", "-framerate", str(fps),
+    cmd = ["ffmpeg", "-nostdin", "-y", "-framerate", str(fps),
            "-i", str(frame_pattern),
            "-frames:v", str(n_frames),
            "-c:v", "libx264", "-pix_fmt", "yuv420p",
            "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
            "-crf", "20", str(out_path)]
     print(" ".join(cmd))
-    subprocess.run(cmd, check=True)
+    # `-nostdin` + stdin=DEVNULL: otherwise ffmpeg reads the terminal for
+    # interactive keys and a backgrounded (`nohup … &`) run hits SIGTTIN and
+    # suspends mid-encode.
+    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 
 def main():

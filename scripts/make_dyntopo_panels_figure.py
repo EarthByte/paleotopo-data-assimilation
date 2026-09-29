@@ -68,7 +68,7 @@ OPTIONS
     --combined-dir PATH              directory of
                                      <age>Ma_corrected_plus_dyntopo_diff_young_SW.nc
                                      files (default:
-                                     PROJECT_ROOT/data/corrected_Scotese_plus_dyntopo_diff_young)
+                                     PROJECT_ROOT/data/corrected_plus_dyntopo_diff_young)
     --ages INT INT INT INT INT INT   exactly six ages, top-row-first
                                      (default: 300 250 200 150 100 50)
     --vlim FLOAT                     symmetric +/- m for the polar cpt

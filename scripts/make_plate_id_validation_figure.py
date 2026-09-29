@@ -16,7 +16,7 @@ reconstruction step:
       with a 25% warning threshold.
 
 OUTPUT
-    paper/Scotese/Fig04_plate_id_validation.png
+    Figures/Fig04_plate_id_validation.png
 =============================================================================
 """
 from __future__ import annotations
@@ -33,12 +33,12 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CSV_PATH, CORRECTED_DIR
+from paths_scotese import CSV_PATH, CORRECTED_DIR, PAPER_FIG_DIR
 import assimilate_scotese as A
 from sample_reconstruct_scotese import ScoteseSampleReconstructor
 
 PROJ_ROOT = HERE.parent
-FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
+FIG_DIR = PAPER_FIG_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 

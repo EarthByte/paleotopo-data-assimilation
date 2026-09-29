@@ -52,7 +52,7 @@ USAGE
     from netcdf_io import write_cf_grid
 
     write_cf_grid(
-        out_path=Path("data/corrected_Scotese/50Ma_corrected_SW.nc"),
+        out_path=Path("data/corrected/50Ma_corrected_SW.nc"),
         lat=lat, lon=lon,
         fields={
             "M_corrected": (M_final, {"units": "m",

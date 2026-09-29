@@ -93,7 +93,7 @@ This step is fast (< 1 minute).
 python full_sweep_diagnostics_scotese.py
 ```
 
-Three figures land in `outputs/`:
+Three figures land in `outputs/figures/`:
 
 | figure | what it shows |
 |--------|---------------|
@@ -109,7 +109,7 @@ Three figures land in `outputs/`:
 python render_videos_cartopy_scotese.py --fps 12
 ```
 
-Outputs in `outputs/`:
+Outputs in `outputs/videos/`:
 - `SW_paleotopo_elevation_540-0Ma_preview.mp4`     — corrected elevation
 - `SW_paleotopo_original_540-0Ma_preview.mp4`      — original S&W input
 - `SW_paleotopo_delta_540-0Ma_preview.mp4`         — Δz
@@ -136,7 +136,8 @@ narrative angle:
 
 | Metric | What it tells you |
 |--------|-------------------|
-| `n_decluster` | Sample-density indicator.  When this drops below ~30 the pipeline falls back to small residual-only corrections.  Phanerozoic always has plenty; data sparsity rises sharply in the Cambrian–Ordovician. |
+| `n_decluster` | Declustered samples the slice uses, after samples on the prior's sea are dropped.  Medians: 160 in the Cenozoic, 99 in the Mesozoic, 20 in the Palaeozoic (7–28 in the Cambrian).  Below ~30 the province rescaling rarely reaches full weight and the correction is mostly the residual kernel near the samples. |
+| `n_sea_sited` | Declustered samples dropped because the prior puts their cell at or below sea level. |
 | `bias_before_m` / `bias_after_m` | The kinematic prior's amplitude bias against the geochem evidence.  Positive ⇒ model is too low.  Reduction from before → after is the pipeline's main numerical claim. |
 | `rms_before_m` / `rms_after_m` | Sample-to-grid scatter.  Always reduces less than the bias because the residual kernel deliberately doesn't try to fit each cluster to zero error — fitting noise is bad practice. |
 | `land_corr_p99_m` | Top of the corrected map.  Compare against ~4 km Earth-modern reference.  Drops in data-sparse intervals are physically reasonable, not artefacts. |

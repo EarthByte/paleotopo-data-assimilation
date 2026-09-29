@@ -19,8 +19,8 @@ declustered sample count) and produces a comparison figure suitable
 for the paper supplementary.
 
 OUTPUTS
-    data/corrected_Scotese/sensitivity_refinements.csv
-    paper/Scotese/Fig10_sensitivity_refinements.png
+    <CORRECTED_DIR>/sensitivity_refinements.csv   (data/corrected)
+    Figures/Fig10_sensitivity_refinements.png
 
 USAGE
     cd <project>/scripts_Scotese
@@ -42,9 +42,9 @@ import matplotlib.pyplot as plt
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import assimilate_scotese as A
-from paths_scotese import CORRECTED_DIR
+from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
 PROJ_ROOT = HERE.parent
-FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
+FIG_DIR = PAPER_FIG_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -113,6 +113,19 @@ def main():
     # don't see the last test setting
     _set_config(original_cfg)
 
+    # Every configuration must change something: a configuration identical to Default
+    # means the setting did not reach assimilate_scotese (for example a module constant
+    # bound as a default argument at import), and is an error, not a result.
+    cols = ["bias_after_m", "rms_after_m", "p99_after_m", "delta_rms_m"]
+    ref = pd.DataFrame([r for r in rows if r["config"] == CONFIGS[0][0]]).set_index("t_Ma")[cols]
+    for label, _, _ in CONFIGS[1:]:
+        cur = pd.DataFrame([r for r in rows if r["config"] == label]).set_index("t_Ma")[cols]
+        dmax = float(np.nanmax(np.abs(cur.values - ref.loc[cur.index].values)))
+        print(f"  {label}: largest difference from Default over the four metrics {dmax:.1f} m")
+        if dmax == 0.0:
+            sys.exit(f"'{label}' is identical to Default at every age: the toggle did not reach "
+                     "assimilate_scotese. Nothing written.")
+
     # ----------------------------------------------------------------------
     # Save CSV
     # ----------------------------------------------------------------------
@@ -144,11 +157,9 @@ def main():
         ax.grid(True, alpha=0.3, lw=0.5)
     # Single legend at the top
     handles, labels = axes[0, 0].get_legend_handles_labels()
+    plt.tight_layout(rect=(0, 0, 1, 0.93))
     fig.legend(handles, labels, loc="upper center", ncol=3, fontsize=9,
-               bbox_to_anchor=(0.5, 1.02), frameon=True)
-    plt.suptitle("Ablation of the four methodological refinements",
-                 fontsize=13, y=1.06)
-    plt.tight_layout()
+               bbox_to_anchor=(0.5, 1.0), frameon=True)
 
     out_png = FIG_DIR / "Fig10_sensitivity_refinements.png"
     plt.savefig(out_png, dpi=180, bbox_inches="tight")

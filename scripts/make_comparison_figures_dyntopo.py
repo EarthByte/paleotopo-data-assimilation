@@ -59,7 +59,7 @@ OPTIONS
         figures.  Default: 250 200 150 100 50 0.
     --combined-dir PATH
         Directory of <age>Ma_corrected_plus_dyntopo_SW.nc files
-        (default: PROJECT_ROOT/data/corrected_Scotese_plus_dyntopo).
+        (default: PROJECT_ROOT/data/corrected_plus_dyntopo).
     --no-pdf            skip PDF export
     --no-png            skip PNG export
     --dpi  INT          PNG dpi (default 200)
@@ -156,7 +156,7 @@ def load_grid(t: int, combined_dir: Path):
     # continent mask.  Derive it from the corresponding corrected-S&W
     # NetCDF (same age, no dyntopo involved) so plate-polygon coastline
     # contours still draw correctly.
-    corrected_sw = (PROJECT_ROOT / "data" / "corrected_Scotese"
+    corrected_sw = (PROJECT_ROOT / "data" / "corrected"
                     / f"{int(t)}Ma_corrected_SW.nc")
     if corrected_sw.exists():
         with nc.Dataset(corrected_sw) as d:

@@ -78,7 +78,7 @@ USAGE
 OPTIONS
     --combined-dir PATH    directory of
                            <age>Ma_corrected_plus_dyntopo_diff_young_SW.nc
-                           (default: PROJECT_ROOT/data/corrected_Scotese_plus_dyntopo_diff_young)
+                           (default: PROJECT_ROOT/data/corrected_plus_dyntopo_diff_young)
     --ages INT ...         explicit list of ages (default: all available)
     --fps INT              video frame rate (default 10)
     --modes ...            which video(s) to build: combined / dyntopo_diff /

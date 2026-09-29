@@ -78,7 +78,7 @@ T0=$(date +%s)
 
 PROJ_ROOT="$HERE"
 PFIG="$PROJ_ROOT/Figures"
-OUTS="$PROJ_ROOT/outputs"
+OUTS="$PROJ_ROOT/outputs/figures"      # paths_scotese.FIGURES_DIR
 mkdir -p "$PFIG"
 
 pushd scripts > /dev/null

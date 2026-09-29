@@ -47,14 +47,14 @@ INPUTS
     plus 104, 109, ..., 150 Ma.
 
   Geochem-corrected paleo-DEM (input to add the dyntopo diff to):
-    Paleotopo_data_assimilation/data/corrected_Scotese/<age>Ma_corrected_SW.nc
+    Paleotopo_data_assimilation/data/corrected/<age>Ma_corrected_SW.nc
 
   Scotese plate model (for partition + rotation):
     Scotese_Wright_PlateModel_2023.rot
     Scotese_Wright_PresentDay_ContinentalPolygons.gpml
 
 OUTPUTS
-  Paleotopo_data_assimilation/data/corrected_Scotese_plus_dyntopo_diff_<source>/
+  Paleotopo_data_assimilation/data/corrected_plus_dyntopo_diff_<source>/
     <T>Ma_corrected_plus_dyntopo_diff_<source>_SW.nc
   with M_corrected (input), z_dyntopo_diff (rotated to Scotese frame), and
   M_combined (sum, land>0 guarded) — all CF-1.10 + ACDD-1.3 compliant.
@@ -104,11 +104,11 @@ YOUNG_DIR = DATA_ROOT / "Young2022_gld428_grids_20Myr"
 BRAZ_DIR  = (DATA_ROOT / "Braz_etal_2021-_dynatopo_and_rotations"
              / "gmcm9_plate_ref_frame_grids")
 
-CORRECTED_DIR = PALEOTOPO_ROOT / "data" / "corrected_Scotese"
+CORRECTED_DIR = PALEOTOPO_ROOT / "data" / "corrected"
 
 # Scotese 2023 plate model for partition + rotation
 SCOTESE_PLATE_DIR = (PALEOTOPO_ROOT / "data" /
-                     "Scotese_Wright_plate_model_revised")
+                     "Scotese_Wright_plate_model")
 SCOTESE_ROT_FILE = SCOTESE_PLATE_DIR / "Scotese_Wright_PlateModel_2023.rot"
 SCOTESE_POLYGONS = SCOTESE_PLATE_DIR / "Scotese_Wright_PresentDay_ContinentalPolygons.gpml"
 

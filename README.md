@@ -44,9 +44,17 @@ Zhou, J, Farahbakhsh, E., ..., Müller, R.D., 2026. Recurrent super highlands si
   sub-crustal density rather than crustal thickness (Mooney and Vidale, 2003),
   so samples inside the seismically inferred craton outlines of Shirmard et al.
   (2025) are dropped before declustering.
+- Declustered observations that fall on the Scotese and Wright map's sea (prior
+  elevation at or below sea level) are dropped. A sample of continental crust
+  thickness says how high the land stood, not how deep the sea was; kept, these
+  samples pulled the correction up over the lowlands next to them.
 - The province rescaling is gated to 400 km from the nearest observation, so a
   province-wide hypsometric transfer is not applied to cells no sample can
   constrain.
+- The residual correction is kept whole within 250 km of the nearest
+  observation and tapered to zero at 500 km. Igneous rock chemistry samples the
+  magmatic belts, not the basins between them, so the correction stays where the
+  samples constrain it.
 - 109 corrected NetCDFs for the full Phanerozoic at 5 Myr cadence,
   reproducible from a single shell command in ~5 minutes on a laptop.
 - Demonstration application: a spatially-resolved Phanerozoic
@@ -62,7 +70,7 @@ paleotopo-data-assimilation/
 ├── LICENSE                        ← MIT
 ├── CITATION.cff                   ← citation metadata for GitHub / Zenodo
 ├── run_pipeline.sh                ← end-to-end runner (assimilate + diagnostics + videos)
-├── build_all_figures.sh           ← single-command rebuild of every Fig01..Fig11
+├── build_all_figures.sh           ← single-command rebuild of every Fig01..Fig10
 │
 ├── scripts/
 │   ├── paths_scotese.py           ← shared path configuration
@@ -147,8 +155,8 @@ left off.  Pass `--force` to invalidate caches and rebuild from scratch.
 | Location | Contents |
 |---|---|
 | `data/corrected/` | 109 corrected NetCDFs (`<age>Ma_corrected_SW.nc`) + summary CSVs and markdown dashboards |
-| `outputs/` | preview MP4s, publication MP4s, diagnostic PNGs |
-| `Figures/` | the eleven figures `Fig01..Fig11` written there by `./build_all_figures.sh` |
+| `outputs/` | diagnostic PNGs (`outputs/figures/`) and MP4s (`outputs/videos/`) |
+| `Figures/` | the paper figures `Fig01..Fig10` written there by `./build_all_figures.sh` |
 
 Each `<age>Ma_corrected_SW.nc` contains:
 
@@ -253,7 +261,7 @@ production values used for the Phanerozoic sweep released with the paper:
 | `PROVINCE_POOLING` | True | allow related provinces to pool samples (down-weight 0.3) |
 | `LOCAL_SUPPORT_KM` | 400.0 km | rescaling correction fades to zero beyond this distance from samples; override with `PALEO_LOCAL_SUPPORT_KM` |
 | `PROV_TAPER_CELLS` | 2 | distance (in cells, ~110 km each) over which each province's correction fades to zero at its boundary |
-| `CROSS_BOUNDARY_SIGMA` | 3.0 cells | Gaussian σ that bridges the post-taper neutral band at province boundaries |
+| `CROSS_BOUNDARY_SIGMA` | 1.5 cells | Gaussian σ (~165 km) that bridges the post-taper neutral band at province boundaries |
 | `PROVINCE_CLASSIFIER` | `"geomorphic"` | `"geomorphic"` (9 cat.) or `"hasterok"` (15 cat., Hasterok et al. 2022 ESR shapefile) |
 
 ### Observation selection
@@ -261,12 +269,14 @@ production values used for the Phanerozoic sweep released with the paper:
 | Parameter | Default | Role |
 |---|---|---|
 | `DROP_CRATON_SAMPLES` | True | drop samples inside the Shirmard et al. (2025) craton outlines before declustering; override with `PALEO_DROP_CRATON` |
+| `DROP_SEA_SITED_SAMPLES` | True | drop declustered samples whose cell the prior puts at or below sea level (`M_orig <= 0`); override with `PALEO_DROP_SEA_SITED` |
 
 ### Residual kernel
 
 | Parameter | Default | Role |
 |---|---|---|
 | `RESID_LS_KM` | 150.0 km | per-sample Gaussian length scale for the smoothed-residual deposition |
+| `RESID_REACH_KM` | (250, 500) km | the residual correction is kept whole within 250 km of the nearest declustered sample and tapered linearly to zero at 500 km; `(0, 0)` disables the taper |
 | `KAPPA_QUALITY` | 300 m/km | σ contribution from `Missing_Risk_DeltaT` |
 | `W_MISSING_OVER40` | 0.25 | down-weight factor when `Missing_Over40pct = True` |
 
@@ -283,7 +293,7 @@ production values used for the Phanerozoic sweep released with the paper:
 |---|---|---|
 | `DELTA_MEDIAN_WINDOW` | 5 | 5×5 median-filter despeckle on Δz (kills clusters up to ~12 pixels) |
 | `DELTA_SMOOTH_SIGMA` | 1.5 cells | first Gaussian smoothing pass on Δz (~165 km) |
-| `DELTA_SMOOTH_SIGMA_FINAL` | 4.5 cells | final Gaussian smoothing pass on Δz (~495 km) |
+| `DELTA_SMOOTH_SIGMA_FINAL` | 0.0 (off) | optional second Gaussian smoothing pass on Δz |
 | `FINAL_LAND_SMOOTH_SIGMA` | 0.0 (disabled) | optional subaerial-only Gaussian on M_corrected |
 | `CONT_MASK_CLOSING_ITER` | 6 | morphological closing iterations on the continent mask (fills polygon gaps up to ~12 cells wide) |
 
@@ -326,15 +336,19 @@ for the COB / arc / margin thresholds) and re-run with `--force`.
 
 ## Headline results
 
-| Era | bias before → after (m) | p99 land before → after (m) | n_decluster median | offshore drop median |
+| Era | bias before → after (m) | p99 land before → after (m) | declustered samples, median | offshore drop, median |
 |---|---|---|---|---|
-| Cenozoic (0–66 Ma) | 1722 → 640 | 2349 → 3980 | 231 | 4 % |
-| Mesozoic (66–252 Ma) | 3257 → 290 | 1840 → 3618 | 198 | 8 % |
-| Paleozoic (252–540 Ma) | 3732 → 800 | 2120 → 3668 | 118 | 22 % |
+| Cenozoic (5–66 Ma) | 1077 → 292 | 2360 → 3017 | 160 | 0.8 % |
+| Mesozoic (66–252 Ma) | 1255 → 253 | 1880 → 2468 | 99 | 1.2 % |
+| Palaeozoic (252–540 Ma) | 1309 → 486 | 2120 → 2320 | 20 | 8.8 % |
 
-The assimilation reduces the median per-slice sample-residual bias by
-500–1100 m and lifts the 99th-percentile land elevation from a typical
-2 km to ~3.7 km across the Phanerozoic.
+Medians over the 5 Myr slices of each era (0 Ma is the present-day bypass and
+is left out); the bias is the mean of observed minus gridded elevation over the
+declustered samples each slice uses. The assimilation reduces the median
+per-slice bias by 750–1080 m and lifts the 99th-percentile land elevation from
+a median of 1970 m to 2410 m over 5–540 Ma. Palaeozoic slices keep few
+declustered samples (median 20; 7–28 in the Cambrian), and the correction there
+is confined to their surroundings by the 400 km and 500 km reach limits.
 
 ---
 

@@ -234,18 +234,26 @@ unrecognised values to `Other`):
 The CSV shipped in the companion Zenodo deposit is filtered to
 `Age_Ma ≤ 540` — i.e. the Phanerozoic — to match the temporal scope
 of the Scotese & Wright (2018) PaleoDEM series.  The full unfiltered
-compilation (~99 000 continental rows, extending into the Precambrian)
-was used for the Zhou et al. (2025) mohometry paper and is available
-on request from the authors.
+compilation (101,874 rows, extending into the Precambrian) was used
+for the Zhou et al. (2025) mohometry paper and is public at
+https://github.com/EarthByte/Paleo-topography-in-deep-time.
 
 Era breakdown of the Phanerozoic subset:
 
 | Era | Age range | Sample count |
 |---|---|---|
-| Cenozoic | 0–66 Ma | 32 750 |
-| Mesozoic | 66–252 Ma | 22 124 |
-| Paleozoic | 252–540 Ma | 11 762 |
-| **Total** | **0–540 Ma** | **66 636** |
+| Cenozoic | 0–66 Ma | 35,057 |
+| Mesozoic | 66–252 Ma | 22,363 |
+| Paleozoic | 252–540 Ma | 11,781 |
+| **Total** | **0–540 Ma** | **69,201** |
+
+Counted 2026-09-03 from `Global_crustal_thickness_with_paleo_coords.csv`.
+Bins are closed at their upper bound: a sample at exactly 66 Ma counts as
+Cenozoic, one at exactly 252 Ma as Mesozoic. 259, 112 and 40 samples sit
+exactly on the 66, 252 and 540 Ma boundaries, and 4 carry an age of
+exactly 0 Ma. The counts previously given here — 32 750 / 22 124 / 11 762,
+total 66 636 — matched no file in this repository and are superseded; the
+assimilation and the CO₂ paper both run on the 69,201-sample population.
 
 ---
 

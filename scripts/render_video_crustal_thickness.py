@@ -8,7 +8,7 @@ slice (0–540 Ma) of the Airy-isostasy crustal-thickness field z_c
 produced by `derive_crustal_thickness.py`.
 
 INPUTS  (must exist; produced by derive_crustal_thickness.py --all)
-    data/corrected/<age>Ma_crustal_thickness_SW.nc
+    data/corrected_merdith_geochem/<age>Ma_crustal_thickness_SW.nc
 
 OUTPUTS
     outputs/video_frames_crustal_thickness_SW/frame_NNNN.png   (cache)

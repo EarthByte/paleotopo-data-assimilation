@@ -34,7 +34,7 @@ USAGE
 
 OPTIONS
     --combined-dir PATH       directory of <age>Ma_corrected_plus_dyntopo_SW.nc
-                              (default: PROJECT_ROOT/data/corrected_Scotese_plus_dyntopo)
+                              (default: PROJECT_ROOT/data/corrected_plus_dyntopo)
     --age-min INT             default 0
     --age-max INT             default 250 (caps to dyntopo availability)
     --cadence-myr INT         default 5
@@ -91,7 +91,7 @@ def _load(combined_dir: Path, age: int) -> tuple:
         Mc  = np.asarray(d["M_corrected"][:], dtype=float)
         z   = np.asarray(d["z_dyntopo_diff"][:], dtype=float)
         Mcomb = np.asarray(d["M_combined"][:], dtype=float)
-    corrected_sw = (PROJECT_ROOT / "data" / "corrected_Scotese"
+    corrected_sw = (PROJECT_ROOT / "data" / "corrected"
                     / f"{int(age)}Ma_corrected_SW.nc")
     if corrected_sw.exists():
         with nc.Dataset(corrected_sw) as d:

@@ -10,15 +10,22 @@ time slice (100 Ma):
   (b) Reconstructed declustered samples (filled circles, coloured by
       observed elevation) overlaid on the input grid
   (c) Tectonic-province raster with subduction-zone overlay
-  (d) Δz field from province-wise CDF rescaling only
-  (e) Δz field from smoothed-residual kernel only
+  (d) Δz field from province-wise CDF rescaling only (after the 400 km
+      support gate, the province-edge taper and the cross-boundary smoothing)
+  (e) Δz field from smoothed-residual kernel only (after its 250-500 km
+      reach taper)
   (f) Final corrected map (after continent-masked smoothing + cap)
+
+Every panel is drawn from the intermediate fields of ONE call to
+assimilate_scotese.assimilate_one (its `stages` argument), so the figure
+shows the chain the product is built with; panel (f) is checked against
+the product grid of the same age in CORRECTED_DIR before anything is drawn.
 
 All panels in Robinson projection.  Elevation cpt: terrain, −5..+5 km.
 Δz cpt: RdBu_r, ±2 km.  Province cmap: tab10.
 
 OUTPUT
-    paper/Scotese/Fig03_pipeline_illustration_100Ma.png
+    Figures/Fig03_pipeline_illustration_100Ma.png
 
 USAGE
     cd <project>/scripts
@@ -39,16 +46,14 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR
+from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
 import assimilate_scotese as A
-from plate_model_utils_scotese import (
-    cob_mask, province_grid, PROV_LIST, PROV_INDEX, subduction_zones,
-)
+from plate_model_utils_scotese import subduction_zones
 
 PROJ_ROOT = HERE.parent
-# Paper-numbered output: land directly in paper/Scotese/, matching the
+# Paper-numbered output: land directly in Figures/, matching the
 # convention used by the other Fig0X scripts in this directory.
-FIG_DIR = PROJ_ROOT / "paper" / "Scotese"
+FIG_DIR = PAPER_FIG_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 AGE = 100
@@ -88,32 +93,21 @@ def show_topo(ax, lat, lon, arr, cont, title, label_letter, label_age=True,
 
 def main():
     print(f"Rendering pipeline illustration at {AGE} Ma …")
-    # Reload everything for this slice so each panel can be drawn
-    # exactly as the pipeline produces it.
-    M, lat, lon = A.sw_load_grid(AGE)
-    cont = cob_mask(AGE, lat, lon, M)
-
-    df_geo = A.get_geochem()
-    df = A.prepare_samples(df_geo, AGE)
-
-    # offshore-drop validation (same as in assimilate_one), with the
-    # additional check that the cell is at positive elevation in the
-    # kinematic prior — this avoids samples landing on flooded shelves
-    # or drowned-interior basins that are inside the polygon footprint
-    # but would visually plot over the ocean.
-    from sw_io import nearest_cell_index
-    iy = nearest_cell_index(lat, df["rlat"].values)
-    ix = nearest_cell_index(lon, df["rlon"].values)
-    on_land = cont[iy, ix] & (M[iy, ix] > 0)
-    df = df[on_land].reset_index(drop=True)
-
-    dec = A.decluster(df, lat, lon)
-    P = province_grid(AGE, lat, lon, cont, dec, M)
-
-    # Stage isolation: rescaling-only Δz and residual-only Δz
-    M3 = A.province_rescale(M, P, dec, cont, n_min_p=A.N_MIN_P)
-    r, _ = A.smoothed_residual(M3, P, dec, lat, lon, cont, ls_km=A.RESID_LS_KM)
-    Mf = A.finalise(M, M3 + r, cont)
+    # One run of the workflow for this slice, keeping its intermediate fields, so each
+    # panel is exactly the stage the product went through (the figure used to recompute the
+    # stages itself and left out the support gate, the edge taper, the cross-boundary
+    # smoothing and the reach taper).
+    st = {}
+    A.assimilate_one(float(AGE), save_nc=False, stages=st)
+    M, cont, dec, P, M3, r, Mf = (st[k] for k in ("M", "cont", "dec", "P", "M3", "r", "M_final"))
+    _, lat, lon = A.sw_load_grid(AGE)
+    prod = CORRECTED_DIR / f"{AGE}Ma_corrected_SW.nc"
+    with nc.Dataset(prod) as d:
+        Mp = np.asarray(d["M_corrected"][:], dtype=float)
+    dmax = float(np.nanmax(np.abs(Mf - Mp)))
+    print(f"  panel (f) against the product {prod.name}: max |difference| {dmax:.4f} m")
+    if dmax > 0.5:          # exact on the machine that built the product; other numpy/scipy builds differ by < 0.1 m
+        sys.exit(f"  the workflow run does not reproduce {prod}: the figure is not drawn")
 
     fig = plt.figure(figsize=(14, 13))
     proj = ccrs.Robinson()
@@ -178,7 +172,6 @@ def main():
     cb_d = fig.colorbar(pcm_d, cax=cax_d, orientation="horizontal", extend="both")
     cb_d.set_label("Δz (m)", fontsize=9)
 
-    plt.suptitle(f"Assimilation pipeline illustrated at {AGE} Ma", fontsize=14, y=0.97)
     fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.10,
                          hspace=0.28, wspace=0.06)
     out = FIG_DIR / "Fig03_pipeline_illustration_100Ma.png"

@@ -63,7 +63,7 @@ import pygmt
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, PROJECT_ROOT, FIGURES_DIR
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, PROJECT_ROOT, FIGURES_DIR, PAPER_FIG_DIR
 from sw_io import available_ages as sw_available_ages, nearest_cell_index
 import assimilate_scotese as A   # for prepare_samples + decluster
 
@@ -231,7 +231,7 @@ def make_figure(age_left: int, age_right: int, out_basename: str,
                 paper_basename: str | None = None):
     """
     paper_basename : if given, also write the figure to
-        PROJECT_ROOT/paper/Scotese/<paper_basename>.{png,pdf}
+        PROJECT_ROOT/Figures/<paper_basename>.{png,pdf}
         in addition to OUTPUT_DIR/<out_basename>.{png,pdf}.  Used to
         publish the canonical Fig05a/b/c renderings without an extra
         shell-side copy.
@@ -368,14 +368,14 @@ def make_figure(age_left: int, age_right: int, out_basename: str,
 
     # ---- Save ----
     # Each output is written to two locations:
-    #   1) OUTPUT_DIR (outputs_Scotese/SW_comparison_*.{png,pdf}) — the
+    #   1) FIGURES_DIR (outputs/figures/SW_comparison_*.{png,pdf}) — the
     #      intermediate render path; cheap to wipe and rebuild during
     #      layout iteration.
-    #   2) paper/Scotese/ with the publication name (only when
+    #   2) Figures/ with the publication name (only when
     #      `paper_basename` is given) — so a direct `python
     #      make_comparison_figures.py` run refreshes the paper-folder
     #      copy in one step, no extra `cp` needed.
-    paper_dir = PROJECT_ROOT / "paper" / "Scotese"
+    paper_dir = PAPER_FIG_DIR
     if paper_basename:
         paper_dir.mkdir(parents=True, exist_ok=True)
 

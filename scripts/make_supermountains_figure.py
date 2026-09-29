@@ -15,7 +15,7 @@ DEFINITION
     a secondary series at 2000 m is also plotted as a faint reference.
 
 OUTPUT
-    paper/Scotese/Fig08_supermountains_index.png
+    Figures/Fig08_supermountains_index.png
 
 ANNOTATIONS
     Three classical supermountain epochs labelled on the time series:
@@ -40,9 +40,9 @@ import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR
+from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
 PROJECT_ROOT = HERE.parent
-FIG_DIR = PROJECT_ROOT / "paper" / "Scotese"
+FIG_DIR = PAPER_FIG_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configuration
@@ -105,7 +105,7 @@ def main():
     print("Building supermountains time series …")
     df_3km = build_timeseries(THRESHOLD_PRIMARY)
     df_2km = build_timeseries(THRESHOLD_SECONDARY)
-    out_csv = FIG_DIR.parent.parent / "data" / "corrected_Scotese" / "supermountains_index.csv"
+    out_csv = CORRECTED_DIR / "supermountains_index.csv"
     df_3km.merge(df_2km.rename(columns={"S_t": "S_t_2km"})[["t_Ma","S_t_2km"]],
                  on="t_Ma").to_csv(out_csv, index=False)
     print(f"  wrote {out_csv}")
@@ -143,8 +143,6 @@ def main():
 
     ax.set_xlabel("Age (Ma)", fontsize=11)
     ax.set_ylabel("Continental area fraction (%)", fontsize=11)
-    ax.set_title("Phanerozoic supermountains index from the corrected paleotopography grids",
-                 fontsize=12, pad=14)
     ax.invert_xaxis()
     ax.set_xlim(540, 0)
     ax.set_ylim(0, ymax)

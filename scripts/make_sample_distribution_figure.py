@@ -14,7 +14,7 @@ the assimilation:
   (d) Per-province declustered sample counts, stratified by era.
 
 OUTPUT
-    paper/Scotese/Fig02_sample_distribution.png
+    Figures/Fig02_sample_distribution.png
 
 USAGE
     cd <project>/scripts_Scotese
@@ -34,10 +34,10 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CSV_PATH
+from paths_scotese import CSV_PATH, PAPER_FIG_DIR
 
 PROJECT_ROOT = HERE.parent
-FIG_DIR = PROJECT_ROOT / "paper" / "Scotese"
+FIG_DIR = PAPER_FIG_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 

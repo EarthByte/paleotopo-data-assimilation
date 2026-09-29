@@ -7,8 +7,9 @@ components are restricted to the **Phanerozoic, 0–540 Ma**:
 
 - 109 Scotese & Wright (2018) PaleoDEMs at 5 Myr cadence;
 - the Scotese & Wright (2018) plate model + present-day continental polygons;
-- the geochem CSV filtered to samples with `Age_Ma ≤ 540` (~66 600
-  samples out of the full ~99 000-row global compilation);
+- the geochem CSV restricted to samples with `Age_Ma ≤ 560` (69,579 of the
+  101,874 rows of the global compilation; 69,201 are 540 Ma or younger, and the
+  rest are within the ±20 Myr window of the oldest slices);
 - the 109 corrected NetCDFs produced by running the pipeline on the
   three inputs above.
 
@@ -26,10 +27,10 @@ folder so the layout becomes:
 data/
 ├── README.md                                    ← you are here
 ├── Scotese_Wright_2018_PaleoDEMs/
-│   ├── 0_paleodem.nc
-│   ├── 5_paleodem.nc
+│   ├── Map01_PALEOMAP_1deg_Holocene_0Ma.nc
+│   ├── Map03_PALEOMAP_1deg_Pliocene_5Ma.nc
 │   ├── ...
-│   └── 540_paleodem.nc                          (109 NetCDFs, 5 Myr cadence)
+│   └── Map88_..._540Ma.nc                       (109 NetCDFs, 5 Myr cadence; the age is read from the file name)
 ├── Scotese_Wright_plate_model/
 │   ├── Scotese_Wright_PlateModel_2023.rot
 │   ├── Scotese_Wright_PlateBoundaries_2023.gpml
@@ -38,7 +39,8 @@ data/
 ├── geochem/
 │   ├── Global_crustal_thickness_with_paleo_coords.csv
 │   └── README.md                                ← geochem-dataset documentation
-└── corrected/                                   ← populated by the pipeline
+├── Shirmard_cratons/                            ← shipped with the repository
+└── corrected/                                   ← the corrected grids (also rebuilt by the pipeline)
     ├── 0Ma_corrected_SW.nc
     ├── ...
     └── 540Ma_corrected_SW.nc
@@ -70,7 +72,13 @@ cd scripts
 python assimilate_scotese.py --all
 ```
 
-This takes ~5 minutes on a modern laptop for the full 109-slice sweep.
-A pre-built copy of `data/corrected/` is also included in the Zenodo
-deposit for users who want the assimilated product directly without
-re-running the pipeline.
+This takes ~10 minutes on a modern laptop for the full 109-slice sweep (the
+first run also assigns plate IDs to the samples and caches them in
+`geochem/sample_plate_ids_SW.npy`). A pre-built copy of `data/corrected/` is
+included in the Zenodo deposit for users who want the assimilated product
+directly. Each grid records its configuration in the global attribute `config`
+(for the distributed grids: `resid_reach_km=250-500; delta_sigma=1.5/0;
+cross_boundary_sigma=1.5; sea_sited_samples=dropped`, support radius 400 km,
+craton samples excluded, declustered samples on the prior's sea excluded).
+Rebuilding writes over `data/corrected/` only with `--force`; set
+`PALEO_CORRECTED_DIR` to write a rebuild elsewhere and compare.

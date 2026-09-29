@@ -22,12 +22,16 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import OUTPUT_DIR, PROJECT_ROOT, FIGURES_DIR
+from paths_scotese import FIGURES_DIR, PAPER_FIG_DIR
+import assimilate_scotese as A      # the parameters printed in the figure are read from the workflow itself
 
-# The paper-numbered figure lives in paper/Scotese/.  We also drop a copy
-# in OUTPUT_DIR for convenience when iterating on the flowchart layout.
-FIG_DIR = PROJECT_ROOT / "paper" / "Scotese"
+# The paper-numbered figure lives in PAPER_FIG_DIR (Figures/).  We also drop a copy
+# in FIGURES_DIR for convenience when iterating on the flowchart layout.
+FIG_DIR = PAPER_FIG_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
+FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+assert A.DROP_CRATON_SAMPLES and A.DROP_SEA_SITED_SAMPLES and A.DELTA_SMOOTH_SIGMA_FINAL == 0 and A.RESID_REACH_KM[1] > 0, \
+    "the flowchart describes the product of record; its settings are not the ones in assimilate_scotese.py"
 
 # ---------------------------------------------------------------------------
 # Layout — coordinates in 0..1 figure units
@@ -63,15 +67,9 @@ fig, ax = plt.subplots(figsize=(13, 16))
 ax.set_xlim(0, 1); ax.set_ylim(0, 1)
 ax.set_axis_off()
 
-# ---- Title -------------------------------------------------------------
-ax.text(0.5, 0.985,
-        "Methodology workflow:  geochemical assimilation\n"
-        "into kinematic paleotopography",
-        ha="center", va="top", fontsize=14, weight="bold")
-
 # ---- Lane headers ------------------------------------------------------
 ax.text(0.18, 0.945, "INPUTS",          ha="center", fontsize=11, weight="bold", color="#555")
-ax.text(0.50, 0.945, "PIPELINE",        ha="center", fontsize=11, weight="bold", color="#555")
+ax.text(0.50, 0.945, "ASSIMILATION",    ha="center", fontsize=11, weight="bold", color="#555")
 ax.text(0.82, 0.945, "OUTPUTS",         ha="center", fontsize=11, weight="bold", color="#555")
 
 # ---- INPUT boxes (left column) ----------------------------------------
@@ -108,8 +106,9 @@ add_box(ax, 0.36, 0.70, 0.30, 0.05,
         "(point-in-polygon against\nstatic continental polygons, anchor 000)",
         COLORS["stage"], fontsize=9)
 
-add_box(ax, 0.36, 0.62, 0.30, 0.04,
-        "Drop samples not in any polygon (~2.5%)",
+add_box(ax, 0.36, 0.615, 0.30, 0.05,
+        "Drop samples not in any polygon (~2.5%)\n"
+        "and samples inside craton outlines\n(Shirmard et al. 2025)",
         COLORS["stage"], fontsize=9)
 
 # Per-slice loop banner
@@ -119,7 +118,7 @@ add_box(ax, 0.30, 0.555, 0.42, 0.04,
 
 # Per-slice steps
 add_box(ax, 0.36, 0.49, 0.30, 0.04,
-        "1.  Sample window |Age − t| ≤ Δt(t)",
+        "1.  Sample window |Age − t| ≤ Δt(t),\ntriangular weight in |Age − t|",
         COLORS["stage"], fontsize=9)
 
 add_box(ax, 0.36, 0.43, 0.30, 0.04,
@@ -131,23 +130,28 @@ add_box(ax, 0.36, 0.36, 0.30, 0.04,
         COLORS["stage"], fontsize=9)
 
 add_box(ax, 0.36, 0.30, 0.30, 0.04,
-        "4.  Decluster (1° × Tecto_Prov bins,\nweighted median + Kish correction)",
+        "4.  Decluster (1° × Tecto_Prov bins, weighted\nmedian + Kish); drop bins on the prior's sea",
         COLORS["stage"], fontsize=9)
 
 add_box(ax, 0.36, 0.24, 0.30, 0.04,
-        "5.  Build tectonic-province grid",
+        "5.  Build tectonic-province grid\n(1-cell speckle removed)",
         COLORS["stage"], fontsize=9)
 
 add_box(ax, 0.36, 0.18, 0.30, 0.04,
-        "6.  Province-wise CDF rescaling\n(N ≥ N_min per province)",
+        f"6.  Province-wise CDF rescaling (shrunk N_eff {A.N_MIN_P}→{A.N_FULL_P}),\n"
+        f"zero beyond {A.LOCAL_SUPPORT_KM:.0f} km of the nearest sample,\n"
+        f"province-edge taper, cross-boundary σ {A.CROSS_BOUNDARY_SIGMA:g} cells",
         COLORS["stage"], fontsize=9)
 
 add_box(ax, 0.36, 0.12, 0.30, 0.04,
-        "7.  Smoothed-residual kernel\n(150 km Gaussian, continent-masked)",
+        f"7.  Smoothed-residual kernel ({A.RESID_LS_KM:.0f} km Gaussian),\n"
+        f"whole to {A.RESID_REACH_KM[0]:.0f} km of the nearest sample, zero at {A.RESID_REACH_KM[1]:.0f} km",
         COLORS["stage"], fontsize=9)
 
 add_box(ax, 0.36, 0.06, 0.30, 0.04,
-        "8.  Continent-masked Δz smoothing\n(σ ≈ 165 km)  +  cap |Δz| ≤ 2 km",
+        f"8.  Continent-masked Δz smoothing (σ {A.DELTA_SMOOTH_SIGMA:g} cells)\n"
+        f"+ cap |Δz| ≤ {A.DZ_MAX/1000:g} km; correction ramped to 0 at 0 Ma\n"
+        f"over the youngest {A.YOUNG_TAPER_T_FULL:g} Myr",
         COLORS["stage"], fontsize=9)
 
 # ---- OUTPUT boxes (right column) --------------------------------------
@@ -201,10 +205,10 @@ arrow(ax, 0.34, 0.69, 0.36, 0.725)
 # preprocessing chain
 arrow(ax, 0.51, 0.86, 0.51, 0.83)   # mohometry → isostasy
 arrow(ax, 0.51, 0.78, 0.51, 0.75)   # isostasy → plate-ID
-arrow(ax, 0.51, 0.70, 0.51, 0.66)   # plate-ID → drop
+arrow(ax, 0.51, 0.70, 0.51, 0.665)  # plate-ID → drop
 
 # preprocessing → per-slice loop
-arrow(ax, 0.51, 0.62, 0.51, 0.595)
+arrow(ax, 0.51, 0.615, 0.51, 0.595)
 
 # per-slice loop banner → step 1
 arrow(ax, 0.51, 0.555, 0.51, 0.53)
@@ -240,13 +244,15 @@ ax.text(0.27, 0.30, "loop:\n0 → 540 Ma\n(every 5 Myr)",
 
 # ---- footer ------------------------------------------------------------
 ax.text(0.5, 0.02,
-        "Configurable parameters (all defaults from sensitivity sweep):  "
-        "Δt(t) = 5/10/20 Myr   |   N_min,p = 30   |   ℓ_resid = 150 km   |   "
-        "|Δz| ≤ 2 km   |   σ_smooth = 1.5 cells",
+        "Parameters of the product:  "
+        f"Δt(t) = 5/10/20 Myr   |   N_min,p = {A.N_MIN_P}, N_full,p = {A.N_FULL_P}   |   "
+        f"support {A.LOCAL_SUPPORT_KM:.0f} km   |   ℓ_resid = {A.RESID_LS_KM:.0f} km, reach "
+        f"{A.RESID_REACH_KM[0]:.0f}–{A.RESID_REACH_KM[1]:.0f} km   |   "
+        f"|Δz| ≤ {A.DZ_MAX/1000:g} km   |   σ_smooth = {A.DELTA_SMOOTH_SIGMA:g} cells",
         ha="center", fontsize=8.5, style="italic", color="#444")
 
 plt.tight_layout()
-# Publication-named output goes straight into paper/Scotese/, mirroring
+# Publication-named output goes straight into PAPER_FIG_DIR, mirroring
 # the convention used by make_sample_distribution_figure.py and friends.
 out_png  = FIG_DIR    / "Fig01_methodology_flowchart.png"
 mirror   = FIGURES_DIR / "methodology_flowchart.png"
