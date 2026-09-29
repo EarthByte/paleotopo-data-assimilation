@@ -63,7 +63,6 @@ import netCDF4 as nc
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.path import Path as MplPath
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -114,24 +113,6 @@ def _polygon_to_latlon(poly_on_sphere) -> np.ndarray:
     return np.array([p.to_lat_lon() for p in poly_on_sphere])
 
 
-def _split_dateline(latlon: np.ndarray) -> list[np.ndarray]:
-    """Split a polygon at the dateline if it crosses ±180° in longitude."""
-    if len(latlon) < 3:
-        return []
-    lon = latlon[:, 1]
-    dlon = np.diff(lon)
-    if np.max(np.abs(dlon)) < 180:
-        return [latlon]
-    # Try shifting to a 0-360 longitude range; if the jump goes away, use that
-    lon360 = np.where(lon < 0, lon + 360, lon)
-    if np.max(np.abs(np.diff(lon360))) < 180:
-        return [np.column_stack([latlon[:, 0], lon360 - 180])]
-    # Otherwise split at the largest jump
-    idx = int(np.argmax(np.abs(dlon))) + 1
-    a, b = latlon[:idx], latlon[idx:]
-    return [pts for pts in (a, b) if len(pts) >= 3]
-
-
 def _present_day_centroid(feat) -> tuple[float, float] | None:
     """Return (lat, lon) of the present-day centroid of the polygon feature.
 
@@ -162,7 +143,7 @@ def _assign_continent(centroid: tuple[float, float]) -> str | None:
 def reconstruct_polygons_grouped(age_ma: float):
     """Reconstruct continental polygons to age and group by present-day continent.
 
-    Returns dict[continent_name] -> list of (N, 2) [lat, lon] arrays.
+    Returns dict[continent_name] -> list of reconstructed features (pygplates ReconstructedFeatureGeometry).
     """
     import pygplates as pg
     from plate_model_utils_scotese import get_rotation_model
@@ -179,29 +160,17 @@ def reconstruct_polygons_grouped(age_ma: float):
         rec_geom = rec.get_reconstructed_geometry()
         if not isinstance(rec_geom, pg.PolygonOnSphere):
             continue
-        grouped[name].append(_polygon_to_latlon(rec_geom))
+        grouped[name].append(rec)
     return grouped
 
 
 def build_continent_masks(grouped_polys: dict, lat: np.ndarray,
                           lon: np.ndarray) -> dict:
-    """For each continent, rasterise the polygon union on the (lat, lon) grid."""
-    nlat, nlon = len(lat), len(lon)
-    LAT2D, LON2D = np.meshgrid(lat, lon, indexing="ij")
-    pts = np.column_stack([LON2D.ravel(), LAT2D.ravel()])
-    masks = {}
-    for name, polys in grouped_polys.items():
-        mask = np.zeros((nlat, nlon), dtype=bool)
-        for latlon in polys:
-            for sub in _split_dateline(latlon):
-                if len(sub) < 3:
-                    continue
-                # MplPath wants (x, y) = (lon, lat)
-                path = MplPath(sub[:, [1, 0]])
-                inside = path.contains_points(pts).reshape(nlat, nlon)
-                mask |= inside
-        masks[name] = mask
-    return masks
+    """For each continent, the grid cells its reconstructed polygons contain, decided on the sphere
+    (plate_model_utils_scotese._rasterize_polygons), so polygons across the dateline or around a pole are rasterised
+    where they are."""
+    from plate_model_utils_scotese import _rasterize_polygons
+    return {name: _rasterize_polygons(recs, lat, lon) for name, recs in grouped_polys.items()}
 
 
 # ---------------------------------------------------------------------------

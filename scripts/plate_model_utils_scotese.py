@@ -48,7 +48,6 @@ import os, math, sys
 from pathlib import Path
 import numpy as np
 import pygplates as pg
-from matplotlib.path import Path as MplPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from paths_scotese import (
@@ -94,39 +93,52 @@ def _polygon_to_latlon(poly_on_sphere):
     return np.array(pts)  # (N, 2): (lat, lon)
 
 
-def _split_dateline(latlon):
-    """Split a polygon at any dateline crossing so matplotlib Path works.
-    Returns list of (lat, lon) sub-polygons."""
-    lat_arr = latlon[:, 0]; lon_arr = latlon[:, 1].copy()
-    if len(lon_arr) < 3:
-        return []
-    dlon = np.diff(lon_arr)
-    if np.max(np.abs(dlon)) < 180:
-        return [latlon]
-    lon360 = np.where(lon_arr < 0, lon_arr + 360, lon_arr)
-    if np.max(np.abs(np.diff(lon360))) < 180:
-        return [np.column_stack([lat_arr, lon360 - 180])]
-    idx = np.argmax(np.abs(dlon)) + 1
-    a = latlon[:idx]; b = latlon[idx:]
-    return [a, b] if len(a) >= 3 and len(b) >= 3 else [latlon]
+_GRID_POINTS = {}
+
+
+def _grid_points(lat, lon):
+    """PointOnSphere of every grid-cell centre, built once per grid."""
+    key = (len(lat), float(lat[0]), float(lat[-1]), len(lon), float(lon[0]), float(lon[-1]))
+    if key not in _GRID_POINTS:
+        _GRID_POINTS[key] = [[pg.PointOnSphere(float(la), float(lo)) for lo in lon] for la in lat]
+    return _GRID_POINTS[key]
+
+
+def _latitude_band(geom):
+    """Latitudes a PolygonOnSphere can reach: its vertices and its great-circle edges (sampled at 16 points each),
+    extended to a pole it contains."""
+    v = np.array([p.to_xyz() for p in geom], float)
+    w = np.roll(v, -1, axis=0)
+    s = np.linspace(0.0, 1.0, 17)[:, None, None]
+    arc = (1.0 - s) * v[None] + s * w[None]
+    arc /= np.linalg.norm(arc, axis=2, keepdims=True)
+    z = np.degrees(np.arcsin(np.clip(arc[..., 2], -1.0, 1.0)))
+    lo, hi = float(z.min()), float(z.max())
+    if geom.is_point_in_polygon(pg.PointOnSphere(90.0, 0.0)):
+        hi = 90.0
+    if geom.is_point_in_polygon(pg.PointOnSphere(-90.0, 0.0)):
+        lo = -90.0
+    return lo, hi
 
 
 def _rasterize_polygons(reconstructed, lat, lon):
-    """True where any reconstructed PolygonOnSphere covers a grid cell centre."""
-    nlat, nlon = len(lat), len(lon)
-    LAT2D, LON2D = np.meshgrid(lat, lon, indexing="ij")
-    pts = np.column_stack([LON2D.ravel(), LAT2D.ravel()])
-    mask = np.zeros((nlat, nlon), dtype=bool)
+    """True where any reconstructed PolygonOnSphere contains a grid-cell centre, decided on the sphere by pygplates'
+    point-in-polygon test, so polygons that cross the dateline or contain a pole are rasterised where they are. Only
+    the rows of each polygon's latitude band are tested."""
+    lat = np.asarray(lat, float); lon = np.asarray(lon, float)
+    P = _grid_points(lat, lon)
+    mask = np.zeros((len(lat), len(lon)), dtype=bool)
+    dl = abs(float(lat[1] - lat[0])) if len(lat) > 1 else 1.0
     for rf in reconstructed:
         geom = rf.get_reconstructed_geometry()
         if not isinstance(geom, pg.PolygonOnSphere):
             continue
-        latlon = _polygon_to_latlon(geom)
-        for sub in _split_dateline(latlon):
-            if len(sub) < 3: continue
-            path = MplPath(sub[:, [1, 0]])
-            inside = path.contains_points(pts).reshape(nlat, nlon)
-            mask |= inside
+        lo, hi = _latitude_band(geom)
+        for i in np.where((lat >= lo - dl) & (lat <= hi + dl))[0]:
+            row = P[i]; m = mask[i]
+            for j in range(len(lon)):
+                if not m[j] and geom.is_point_in_polygon(row[j]):
+                    m[j] = True
     return mask
 
 

@@ -136,7 +136,7 @@ narrative angle:
 
 | Metric | What it tells you |
 |--------|-------------------|
-| `n_decluster` | Declustered samples the slice uses, after samples on the prior's sea are dropped.  Medians: 160 in the Cenozoic, 99 in the Mesozoic, 20 in the Palaeozoic (7–28 in the Cambrian).  Below ~30 the province rescaling rarely reaches full weight and the correction is mostly the residual kernel near the samples. |
+| `n_decluster` | Declustered samples the slice uses, after samples on the prior's sea are dropped.  Medians: 160 in the Cenozoic, 100 in the Mesozoic, 23 in the Palaeozoic (13–41 in the Cambrian).  Below ~30 the province rescaling rarely reaches full weight and the correction is mostly the residual kernel near the samples. |
 | `n_sea_sited` | Declustered samples dropped because the prior puts their cell at or below sea level. |
 | `bias_before_m` / `bias_after_m` | The kinematic prior's amplitude bias against the geochem evidence.  Positive ⇒ model is too low.  Reduction from before → after is the pipeline's main numerical claim. |
 | `rms_before_m` / `rms_after_m` | Sample-to-grid scatter.  Always reduces less than the bias because the residual kernel deliberately doesn't try to fit each cluster to zero error — fitting noise is bad practice. |

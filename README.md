@@ -34,6 +34,9 @@ Zhou, J, Farahbakhsh, E., ..., Müller, R.D., 2026. Recurrent super highlands si
 - Per-slice plate-ID assignment via point-in-polygon against the Scotese and Wright
   (2018) present-day continental polygons; samples are reconstructed to
   each target slice age via the Scotese & Wright rotation model.
+- The continental mask of each slice is rasterised on the sphere with pygplates'
+  point-in-polygon test, so blocks that straddle the dateline or lie over a pole
+  (Antarctica, Gondwana in the early Palaeozoic) are masked where they lie.
 - Province-wise CDF rescaling (rank-preserving quantile mapping) +
   short-length-scale Gaussian residual kernel + continent-masked Δz
   smoothing + per-cell amplitude cap.
@@ -338,16 +341,16 @@ for the COB / arc / margin thresholds) and re-run with `--force`.
 
 | Era | bias before → after (m) | p99 land before → after (m) | declustered samples, median | offshore drop, median |
 |---|---|---|---|---|
-| Cenozoic (5–66 Ma) | 1077 → 292 | 2360 → 3017 | 160 | 0.8 % |
-| Mesozoic (66–252 Ma) | 1255 → 253 | 1880 → 2468 | 99 | 1.2 % |
-| Palaeozoic (252–540 Ma) | 1309 → 486 | 2120 → 2320 | 20 | 8.8 % |
+| Cenozoic (5–66 Ma) | 1077 → 293 | 2360 → 3000 | 160 | 0.8 % |
+| Mesozoic (66–252 Ma) | 1255 → 251 | 1840 → 2440 | 100 | 1.2 % |
+| Palaeozoic (252–540 Ma) | 1332 → 513 | 2080 → 2360 | 23 | 7.5 % |
 
 Medians over the 5 Myr slices of each era (0 Ma is the present-day bypass and
 is left out); the bias is the mean of observed minus gridded elevation over the
 declustered samples each slice uses. The assimilation reduces the median
 per-slice bias by 750–1080 m and lifts the 99th-percentile land elevation from
-a median of 1970 m to 2410 m over 5–540 Ma. Palaeozoic slices keep few
-declustered samples (median 20; 7–28 in the Cambrian), and the correction there
+a median of 2000 m to 2400 m over 5–540 Ma. Palaeozoic slices keep few
+declustered samples (median 23; 13–41 in the Cambrian), and the correction there
 is confined to their surroundings by the 400 km and 500 km reach limits.
 
 ---

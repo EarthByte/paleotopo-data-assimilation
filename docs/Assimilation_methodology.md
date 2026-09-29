@@ -52,7 +52,7 @@ g. **Samples on the prior's sea are dropped.** After declustering, an observatio
 ### Stage A — Data preparation
 
 A1. Load `<age>_pgeog_<*>.nc` → 2-D array `M[181,361]` in metres.
-A2. Load plate model rotations and COB polygons; reconstruct COB to time *t* and rasterise onto the 1° grid → continental mask `C[180,360]`.
+A2. Load plate model rotations and COB polygons; reconstruct COB to time *t* and rasterise onto the 1° grid → continental mask `C[180,360]`. A cell belongs to the mask when its centre lies inside a reconstructed polygon, decided on the sphere by pygplates' point-in-polygon test, so polygons that cross the dateline or contain a pole are rasterised where they lie.
 A3. From the geochem CSV, select rows with `recon_age_Ma ∈ [t − Δt(t), t + Δt(t)]` and non-null `rlat, rlon`.
 
 The **adaptive window** `Δt(t)` is chosen so the bin contains at least *N_min* = 200 declustered observations, capped at ±50 Myr. A reasonable default schedule (refined empirically):
