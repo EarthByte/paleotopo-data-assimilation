@@ -46,8 +46,8 @@ Thumbs.db
 .idea/
 .vscode/
 
-# --- log files from long-running pipelines ---
-pipeline*.log
+# --- log files from long-running workflow runs ---
+workflow*.log
 nohup.out
 
 # --- paper-build intermediates (Word/pandoc occasionally creates temp files) ---

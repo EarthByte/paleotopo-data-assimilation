@@ -54,7 +54,7 @@ OUTPUT
     (filename is suffixed with the actual --ages list at run time)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     # 1. (one-off) build the diff NetCDFs at the six target ages
     python build_dyntopo_diff_correction.py --source young \\
         --ages 50 100 150 200 250 300

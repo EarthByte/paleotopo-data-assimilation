@@ -1,9 +1,9 @@
 """
 =============================================================================
-make_pipeline_illustration_figure.py  —  Figure 3 of the Earth-Science Reviews paper
+make_pipeline_illustration_figure.py  —  Figure 4 of the Earth-Science Reviews paper
 =============================================================================
 
-Six-panel illustration of the assimilation pipeline at one representative
+Six-panel illustration of the assimilation workflow at one representative
 time slice (100 Ma):
 
   (a) Scotese & Wright 2018 input elevation
@@ -25,7 +25,7 @@ All panels in Robinson projection.  Elevation cpt: terrain, −5..+5 km.
 Δz cpt: RdBu_r, ±2 km.  Province cmap: tab10.
 
 OUTPUT
-    Figures/Fig03_pipeline_illustration_100Ma.png
+    FIGURES_DIR/pipeline_illustration_100Ma.png (Fig. 4 of the paper; build_all_figures.sh gives it its number)
 
 USAGE
     cd <project>/scripts
@@ -46,14 +46,12 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
+from paths_scotese import CORRECTED_DIR, FIGURES_DIR
 import assimilate_scotese as A
 from plate_model_utils_scotese import subduction_zones
 
 PROJ_ROOT = HERE.parent
-# Paper-numbered output: land directly in Figures/, matching the
-# convention used by the other Fig0X scripts in this directory.
-FIG_DIR = PAPER_FIG_DIR
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 AGE = 100
@@ -92,7 +90,7 @@ def show_topo(ax, lat, lon, arr, cont, title, label_letter, label_age=True,
 
 
 def main():
-    print(f"Rendering pipeline illustration at {AGE} Ma …")
+    print(f"Rendering workflow illustration at {AGE} Ma …")
     # One run of the workflow for this slice, keeping its intermediate fields, so each
     # panel is exactly the stage the product went through (the figure used to recompute the
     # stages itself and left out the support gate, the edge taper, the cross-boundary
@@ -174,7 +172,7 @@ def main():
 
     fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.10,
                          hspace=0.28, wspace=0.06)
-    out = FIG_DIR / "Fig03_pipeline_illustration_100Ma.png"
+    out = FIG_DIR / "pipeline_illustration_100Ma.png"
     plt.savefig(out, dpi=180, bbox_inches="tight")
     print(f"  wrote {out}")
 

@@ -66,7 +66,7 @@ OUTPUT VIDEOS  (paths_scotese.OUTPUT_DIR)
     SW_paleotopo_dyntopo_absolute_<a1>-<a2>Ma.mp4  (optional)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     # Composition NetCDFs must exist first
     python build_dyntopo_diff_correction.py --source young \\
         --ages $(seq 0 5 300) --step-myr 5

@@ -1,6 +1,6 @@
 """
 =============================================================================
-assimilate_scotese.py  —  Production paleo-elevation assimilation pipeline
+assimilate_scotese.py  —  Production paleo-elevation assimilation workflow
                           for the Scotese & Wright 2018 PaleoDEMs
 =============================================================================
 
@@ -36,15 +36,21 @@ OUTPUTS  (per slice — paths_scotese.CORRECTED_DIR)
        province (lat, lon)         int8 Tecto_Prov index (-1 = ocean)
        continent_mask (lat, lon)   bool DEM-based mask (z > COB_PROXY_M)
        n_eff (lat, lon)            effective number of samples behind cell
+       support_km (lat, lon)       great-circle distance to the nearest declustered observation, km
+                                   (NaN without observations). The residual kernel is whole within
+                                   RESID_REACH_KM[0] of it and zero beyond RESID_REACH_KM[1]; the province
+                                   rescaling is zero beyond LOCAL_SUPPORT_KM. Beyond the reach the
+                                   corrected grid is the input grid.
 
     A summary CSV is also incrementally written:
        paths_scotese.CORRECTED_DIR / "corrected_grids_SW_summary.csv"
 
 CONFIGURATION  (constants defined here)
     DZ_MAX           = 2000 m     per-cell |Δz| cap
-    ZMIN, ZMAX       = -9 / +7 km hard floor and ceiling (S&W goes deeper)
+    ZMIN, ZMAX       = -11 / +11 km hard floor and ceiling
     RESID_LS_KM      = 150 km     Gaussian length scale
-    N_MIN_P          = 30         min declustered samples per province
+    N_MIN_P, N_FULL_P = 3, 30     province rescaling starts at a Kish count of 3 and reaches full
+                                  strength at 30 (smooth shrinkage in between)
     KAPPA_QUALITY    = 300 m/km   σ from Missing_Risk_DeltaT
     W_MISSING_OVER40 = 0.25       down-weight low-quality samples
 
@@ -426,6 +432,22 @@ def _R_EARTH_KM():
     return 6371.0
 
 
+SUPPORT_KM_ATTRS = dict(
+    units="km",
+    long_name="great-circle distance to the nearest declustered geochemical observation of this age",
+    comment="the residual kernel is whole within resid_reach_km[0] and zero beyond resid_reach_km[1]; the province "
+            "rescaling is zero beyond local_support_km; beyond the reach the corrected grid is the input grid "
+            "(see the config attribute). NaN where the age has no declustered observation.")
+
+
+def write_support_km(f, support, _z):
+    """support_km variable of a corrected grid (support: (nlat, nlon) km, inf or NaN without observations)."""
+    v = f.createVariable("support_km", "f4", ("lat", "lon"), fill_value=np.float32(np.nan), **_z)
+    v[:] = np.where(np.isfinite(support), support, np.nan).astype(np.float32)
+    for k, val in SUPPORT_KM_ATTRS.items():
+        setattr(v, k, val)
+
+
 def nearest_sample_distance_grid(lat, lon, dec):
     """Return a (nlat, nlon) array of great-circle distances (km) from
     every grid cell to its nearest declustered sample in `dec`.
@@ -475,7 +497,7 @@ _PLATE_ID_CACHE = CSV_PATH.parent / "sample_plate_ids_SW.npy"
 def get_geochem():
     """Load the geochem CSV, ensure each sample has an S&W plate ID
     assigned (cached on disk after the first run since the point-in-
-    polygon test is the slowest step in the whole pipeline)."""
+    polygon test is the slowest step in the whole workflow)."""
     global _csv_cache
     if _csv_cache is not None:
         return _csv_cache.copy()
@@ -1103,6 +1125,7 @@ def assimilate_one(t, save_nc=True, stages=None):
                 f.createVariable("province",    "i1", ("lat","lon"), **_z)[:] = P_g
                 f.createVariable("continent_mask", "i1", ("lat","lon"), **_z)[:] = cont.astype(np.int8)
                 f.createVariable("n_eff",       "f4", ("lat","lon"), **_z)[:] = n_eff_grid
+                write_support_km(f, np.full(M.shape, np.nan), _z)
                 f.target_age_Ma = 0.0
                 f.dataset = "Scotese & Wright 2018 PaleoDEMs"
                 f.config  = "present-day bypass (M_corrected = M_orig)"
@@ -1213,6 +1236,11 @@ def assimilate_one(t, save_nc=True, stages=None):
         if stages is not None:
             stages.update(M3=M3.copy(), r=r.copy(), M_pre_taper=M_final.copy())
 
+    # Support layer written with the grid: distance to the nearest declustered observation (the distance the
+    # support gate and the reach taper above use). NaN when the slice has none.
+    support_grid = (nearest_sample_distance_grid(lat, lon, dec) if dec is not None and len(dec)
+                    else np.full(M.shape, np.nan))
+
     # Young-age correction taper: ramp the geochem correction to zero at
     # 0 Ma (removes the present-day-bypass discontinuity for chained /
     # time-stepping consumers).  No-op for t >= YOUNG_TAPER_T_FULL, and the
@@ -1270,6 +1298,7 @@ def assimilate_one(t, save_nc=True, stages=None):
             f.createVariable("province", "i1", ("lat","lon"), **_z)[:] = P_g
             f.createVariable("continent_mask", "i1", ("lat","lon"), **_z)[:] = cont.astype(np.int8)
             f.createVariable("n_eff", "f4", ("lat","lon"), **_z)[:] = n_eff_grid
+            write_support_km(f, support_grid, _z)
             f.target_age_Ma = float(t)
             f.dataset = "Scotese & Wright 2018 PaleoDEMs"
             f.config = (f"hybrid; ls={RESID_LS_KM}km; cap={DZ_MAX}m; "

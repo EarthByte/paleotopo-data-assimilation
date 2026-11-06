@@ -6,9 +6,9 @@
 # Sequentially runs:
 #   1. assimilate all 109 slices (0–540 Ma, 5 Myr cadence)
 #   2. build summary stats CSVs + markdown dashboards
-#   3. build temporal-evolution diagnostic figures (Figs 6, 7, 9)
-#   4. run the four-refinement ablation (Fig 10)
-#   5. derive Airy-isostasy crustal thickness from M_corrected (Fig 11)
+#   3. build temporal-evolution diagnostic figures (Figs. 6, 7, 13)
+#   4. run the four-refinement ablation (Fig. S4)
+#   5. derive Airy-isostasy crustal thickness from M_corrected (Fig. 16)
 #   6. render preview videos (cartopy, Robinson, 4 modes)
 #   7. render publication videos (pygmt, Winkel-Tripel, 4 modes)
 #
@@ -18,16 +18,16 @@
 #
 # USAGE
 #   cd <repo root>
-#   nohup ./run_pipeline.sh > pipeline.log 2>&1 &
+#   nohup ./run_pipeline.sh > workflow.log 2>&1 &
 #   disown
-#   tail -f pipeline.log
+#   tail -f workflow.log
 #
 # OPTIONS
 #   --no-videos          skip ALL video rendering (cartopy AND pygmt)
 #   --no-pygmt-videos    skip just the slow Winkel-Tripel pygmt videos
-#   --no-sensitivity     skip the four-refinement ablation (Fig 10)
+#   --no-sensitivity     skip the four-refinement ablation (Fig. S4)
 #   --no-thickness       skip the Airy-isostasy crustal-thickness derivation
-#                        (Fig 11)
+#                        (Fig. 16)
 #   --force              re-do anything previously cached:
 #                          - plate-ID caches (re-assigned from polygons)
 #                          - per-slice corrected NetCDFs
@@ -93,7 +93,7 @@ log "python: $PY ($($PY --version 2>&1))"
 
 [[ -d scripts ]] || { log "ERROR: scripts/ missing"; exit 4; }
 
-hdr "paleotopo-data-assimilation pipeline started"
+hdr "paleotopo-data-assimilation workflow started"
 log "  no-videos=$NO_VIDEOS  no-pygmt=$NO_PYGMT  no-sensitivity=$NO_SENSITIVITY  no-thickness=$NO_THICKNESS  force=$FORCE"
 log "  pygmt cadence=$PYGMT_CADENCE Ma"
 T0=$(date +%s)
@@ -118,18 +118,18 @@ run_tagged "assim"      $PY -u assimilate_scotese.py --all $FORCE_ARG
 log "  [2/6] building summary stats …"
 run_tagged "stats"      $PY -u build_summary_stats_scotese.py
 
-log "  [3/6] full-sweep diagnostic figures (Figs 6, 7, 9) …"
+log "  [3/6] full-sweep diagnostic figures (Figs. 6, 7, 13) …"
 run_tagged "diag"       $PY -u full_sweep_diagnostics_scotese.py
 
 if [[ $NO_SENSITIVITY -eq 0 ]]; then
-    log "  [4/7] four-refinement ablation (Fig 10) …"
+    log "  [4/7] four-refinement ablation (Fig. S4) …"
     run_tagged "ablation" $PY -u sensitivity_refinements.py
 else
     log "  [4/7] skipping sensitivity ablation (--no-sensitivity)"
 fi
 
 if [[ $NO_THICKNESS -eq 0 ]]; then
-    log "  [5/7] Airy-isostasy crustal-thickness derivation (Fig 11) …"
+    log "  [5/7] Airy-isostasy crustal-thickness derivation (Fig. 16) …"
     run_tagged "thickness" $PY -u derive_crustal_thickness.py --all --figure
 else
     log "  [5/7] skipping crustal-thickness derivation (--no-thickness)"
@@ -157,11 +157,11 @@ popd > /dev/null
 
 T1=$(date +%s); DUR=$((T1 - T0))
 HOURS=$((DUR / 3600)); MINUTES=$(( (DUR % 3600) / 60 ))
-hdr "pipeline complete in ${HOURS}h ${MINUTES}m"
+hdr "workflow complete in ${HOURS}h ${MINUTES}m"
 log "Outputs:"
 log "  Corrected NetCDFs : data/corrected/"
 log "  Crustal-thickness NetCDFs : data/corrected/<age>Ma_crustal_thickness_SW.nc"
 log "  Stats + figures   : data/corrected/  +  outputs/figures/  +  Figures/"
-log "  Paper figures     : Figures/Fig01..Fig11_*  (run ./build_all_figures.sh"
-log "                       to assemble them all into Figures/)"
+log "  Paper figures     : run ./build_all_figures.sh to build and number them"
+log "                       in Figures/ (Figs. 1-16, S4-S6; Tables S2-S8)"
 log "  Videos            : outputs/videos/SW_paleotopo_*.mp4"

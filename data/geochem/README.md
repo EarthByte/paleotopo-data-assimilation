@@ -203,7 +203,7 @@ For each model, four columns are provided:
 ## Tectonic Province Values
 
 The `Tecto_Prov` column takes one of these nine string values
-(the paleotopo-data-assimilation pipeline collapses NaN /
+(the paleotopo-data-assimilation workflow collapses NaN /
 unrecognised values to `Other`):
 
 - **Continental Arc** — magmatic arc built on continental crust
@@ -257,14 +257,14 @@ assimilation and the CO₂ paper both run on the 69,201-sample population.
 
 ---
 
-## How the paleotopo-data-assimilation pipeline reads this CSV
+## How the paleotopo-data-assimilation workflow reads this CSV
 
-This dataset is the geochemical input to the assimilation pipeline at
-https://github.com/EarthByte/paleotopo-data-assimilation.  The pipeline
+This dataset is the geochemical input to the assimilation workflow at
+https://github.com/EarthByte/paleotopo-data-assimilation.  The workflow
 consumes the following columns (the rest are kept for traceability and
 downstream re-use but are not read by the assimilation step itself):
 
-| Pipeline use | Columns |
+| Workflow use | Columns |
 |---|---|
 | Sample age | `Age_Ma` |
 | Present-day position (used for plate-ID assignment + per-slice reconstruction) | `Lat`, `Lon` |
@@ -279,7 +279,7 @@ as (see `scripts/assimilate_scotese.py::prepare_samples`):
 
 ```
 z_obs       = mean over the six "Isostatic_Elevation_absolute_km" columns
-              (units: km, converted to m inside the pipeline)
+              (units: km, converted to m inside the workflow)
 σ_model     = std-dev over the same six columns
 σ_thickness = inter-model RMS of (high − low) / 2
 σ_quality   = 300 m/km × Missing_Risk_DeltaT (km)
@@ -288,13 +288,13 @@ w           = 1 / σ_total²
               × 0.25 if Missing_Over40pct = True
 ```
 
-The pipeline drops any row with `Missing_Risk_DeltaT > 5 km` outright.
+The workflow drops any row with `Missing_Risk_DeltaT > 5 km` outright.
 
 **Note on the plate-ID / paleo-coords columns.**  The `PlateID`,
 `recon_age_Ma`, `rlat`, `rlon` columns were generated against the MER21
 plate-model family (Merdith et al. 2021) for the Zhou et al. (2025)
 study, and are kept here for traceability.  The
-paleotopo-data-assimilation pipeline does **not** use them — instead,
+paleotopo-data-assimilation workflow does **not** use them — instead,
 it assigns each sample a Scotese & Wright plate ID by point-in-polygon
 test against the Scotese & Wright (2018) present-day continental polygons and
 re-reconstructs the sample's `Lat`/`Lon` to each target slice age via

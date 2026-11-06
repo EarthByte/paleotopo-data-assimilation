@@ -47,7 +47,7 @@ OUTPUT
     paths_scotese.FIGURES_DIR / "SW_comparison_dyntopo_<age1>-<age2>Ma.pdf"
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python add_dyntopo_to_corrected_scotese.py --dyntopo-dir <...>   # produce inputs
     python make_comparison_figures_dyntopo.py                         # default 6 ages
     python make_comparison_figures_dyntopo.py --pairs 250 0           # 250 & 0

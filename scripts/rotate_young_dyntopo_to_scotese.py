@@ -10,7 +10,7 @@ Two source modes are supported:
                       Each grid is rotated at its own age and written
                       directly to the destination with no time
                       interpolation. Sanity-check videos confirmed that
-                      this is the right pipeline; 5-Myr-native rotated
+                      this is the right workflow; 5-Myr-native rotated
                       polygons line up with reconstructed Scotese
                       continental polygons at every age.
 
@@ -52,7 +52,7 @@ Usage
 -----
 
   # production path: 5-Myr native source, rotate at each age
-  python scripts_Scotese/rotate_young_dyntopo_to_scotese.py \\
+  python scripts/rotate_young_dyntopo_to_scotese.py \\
       --src-5myr data/Young2022_gld428_grids_5Myr \\
       --dst data/Young2022_gld428_grids_5Myr_scotese_frame \\
       --muller2022-dir data/Muller_etal_2022_SE_1Ga_Opt_PlateMotionModel_v1.2.4 \\

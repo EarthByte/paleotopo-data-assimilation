@@ -36,7 +36,7 @@ OUTPUT
         (the same numbers as a small csv, for traceability)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     # Make sure the combined NetCDFs are present first:
     python add_dyntopo_to_corrected_scotese.py --dyntopo-dir <...>
     python make_flooded_fraction_figure.py

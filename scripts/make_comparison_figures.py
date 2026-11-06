@@ -442,7 +442,7 @@ def main():
     for i in range(0, len(ages), 2):
         a1, a2 = ages[i], ages[i+1]
         out_name = f"SW_comparison_{a1}-{a2}Ma"
-        paper_name = PAPER_PAIRS.get((a1, a2))   # None for non-canonical pairs
+        paper_name = None   # the paper's Fig. 5 is drawn by esr_revision_maps.py; these pairs stay in FIGURES_DIR
         make_figure(a1, a2, out_basename=out_name,
                     paper_basename=paper_name,
                     width_cm=args.width_cm,

@@ -7,7 +7,7 @@ This script previously composed the geochem-corrected Scotese & Wright
 paleotopography with the Young 2022 dynamic-topography anomaly
 relative to present.  It is now SUPERSEDED by
 
-    scripts_Scotese/build_dyntopo_diff_correction.py
+    scripts/build_dyntopo_diff_correction.py
 
 which implements the same composition correctly: the time-difference
 dyntopo(t) - dyntopo(0) is evaluated in PLATE reference frame (each
@@ -27,7 +27,7 @@ WHY THIS SCRIPT IS WRONG
     build_dyntopo_diff_correction.py is the correct treatment.
 
 WHAT TO RUN INSTEAD
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python build_dyntopo_diff_correction.py --source young \\
         --ages 5 25 50 75 100 150 200 250 300
 
@@ -51,7 +51,7 @@ import sys
 def main() -> int:
     print(__doc__, file=sys.stderr)
     print("\nERROR: This script is superseded by "
-          "scripts_Scotese/build_dyntopo_diff_correction.py.\n"
+          "scripts/build_dyntopo_diff_correction.py.\n"
           "       Run that script instead — see the header docstring "
           "above for the exact command.",
           file=sys.stderr)

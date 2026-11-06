@@ -66,7 +66,7 @@ DEPENDENCIES
   netcdf_io.py — CF writer helper (sibling file in this directory)
 
 USAGE
-  python scripts_Scotese/build_dyntopo_diff_correction.py \\
+  python scripts/build_dyntopo_diff_correction.py \\
       --source young \\
       --ages 5 15 35 55
 =============================================================================
@@ -85,7 +85,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from netcdf_io import write_cf_grid, git_describe
 
-# Resolve paleotopo root from this script's location (scripts_Scotese/.. → repo).
+# Resolve paleotopo root from this script's location (scripts/.. → repo).
 PALEOTOPO_ROOT = HERE.parent
 
 # Where the Young 2022 / Braz 2021 plate-frame dyntopo grids live.

@@ -15,7 +15,8 @@ DEFINITION
     a secondary series at 2000 m is also plotted as a faint reference.
 
 OUTPUT
-    Figures/Fig08_supermountains_index.png
+    FIGURES_DIR/supermountains_index.png (a diagnostic; the paper's area-above-threshold figure,
+    Fig. 14, is drawn by esr_revision_figures.py fig9)
 
 ANNOTATIONS
     Three classical supermountain epochs labelled on the time series:
@@ -24,7 +25,7 @@ ANNOTATIONS
       - Cambrian-Ordovician (Pan-African / Trans-Gondwanan)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python make_supermountains_figure.py
 =============================================================================
 """
@@ -40,9 +41,9 @@ import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
+from paths_scotese import CORRECTED_DIR, FIGURES_DIR
 PROJECT_ROOT = HERE.parent
-FIG_DIR = PAPER_FIG_DIR
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configuration
@@ -150,7 +151,7 @@ def main():
     ax.legend(loc="upper left", framealpha=0.9, fontsize=9)
     plt.tight_layout()
 
-    out_png = FIG_DIR / "Fig08_supermountains_index.png"
+    out_png = FIG_DIR / "supermountains_index.png"
     plt.savefig(out_png, dpi=200, bbox_inches="tight")
     print(f"  wrote {out_png}")
 

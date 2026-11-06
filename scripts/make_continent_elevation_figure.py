@@ -38,7 +38,7 @@ OUTPUT
         SW_continent_elevation_corrected_vs_dyntopo.csv
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     # Combined NetCDFs must exist first (build_dyntopo_diff_correction.py)
     python make_continent_elevation_figure.py
     python make_continent_elevation_figure.py --ages 50 100 200 300

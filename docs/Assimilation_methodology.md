@@ -1,7 +1,5 @@
 # Assimilating geochemically-derived paleo-elevations into the Scotese & Wright PaleoDEM series
 
-**Author:** prepared for Dietmar Müller
-**Date:** 2026-05-10
 **Inputs:**
 - Scotese & Wright (2018) PaleoDEMs at 1° resolution, 0–540 Ma at 5 Myr cadence (NetCDF, variable `palaeogeography` in metres). Grid axes are paleo lat/lon — i.e. positions are in the time-slice's own reference frame, consistent with the Scotese & Wright (2018) rotation model.
 - Scotese & Wright (2018) plate model — rotation file, topology / plate-boundary / plate-polygon GPML files, plus the present-day continental polygons used for sample plate-ID assignment.  All part of the same PALEOMAP PaleoAtlas release.
@@ -173,7 +171,7 @@ Optional (off by default, easy to toggle):
 
 1. **Hypsometric curves before/after** per province and globally — should converge to Earth-like for the well-sampled Phanerozoic.
 2. **Leave-one-out residuals** at sample sites — corrected map should reduce sample-grid mismatch but not exactly fit (the smoothing should be apparent).
-3. **Temporal continuity** — for the full pipeline, plot `M_final(c, t)` vs *t* at fixed cells across orogenic events; expect smooth growth/decay rather than 1-Myr flicker. Flicker → temporal smoothing of the residual field across adjacent maps is needed (Stage F could be extended to a 4-D Gaussian).
+3. **Temporal continuity** — for the full workflow, plot `M_final(c, t)` vs *t* at fixed cells across orogenic events; expect smooth growth/decay rather than 1-Myr flicker. Flicker → temporal smoothing of the residual field across adjacent maps is needed (Stage F could be extended to a 4-D Gaussian).
 4. **Mass balance** — total continental volume per timestep should not jump unphysically between adjacent slices.
 
 ---

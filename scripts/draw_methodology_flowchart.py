@@ -6,7 +6,7 @@ draw_methodology_flowchart.py  —  Figure 1 of the Earth-Science Reviews paper 
 Renders the methodology flow chart as a clean publication PNG using
 matplotlib patches + arrows.  Three colour-coded swim-lanes:
 
-  inputs  (grey)    →    pipeline stages (blue)    →    outputs (green)
+  inputs  (grey)    →    workflow stages (blue)    →    outputs (green)
 
 USAGE
     cd <project>/scripts
@@ -22,12 +22,12 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import FIGURES_DIR, PAPER_FIG_DIR
+from paths_scotese import FIGURES_DIR
 import assimilate_scotese as A      # the parameters printed in the figure are read from the workflow itself
 
-# The paper-numbered figure lives in PAPER_FIG_DIR (Figures/).  We also drop a copy
-# in FIGURES_DIR for convenience when iterating on the flowchart layout.
-FIG_DIR = PAPER_FIG_DIR
+# A raster preview of the workflow diagram, written to FIGURES_DIR. The paper's Fig. 2 is the vector diagram drawn by
+# esr_revision_flowchart.py.
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 assert A.DROP_CRATON_SAMPLES and A.DROP_SEA_SITED_SAMPLES and A.DELTA_SMOOTH_SIGMA_FINAL == 0 and A.RESID_REACH_KM[1] > 0, \
@@ -86,12 +86,12 @@ add_box(ax, 0.02, 0.76, 0.32, 0.06,
         COLORS["input"])
 
 add_box(ax, 0.02, 0.66, 0.32, 0.06,
-        "Plate model\n"
-        "(rotation file, plate-boundary topologies,\n"
-        " present-day static continental polygons)",
+        "Plate model (rotation file, present-day static\n"
+        "continental polygons; plate-boundary topologies\n"
+        "for 0–100 Ma only, used for the arc province)",
         COLORS["input"])
 
-# ---- PIPELINE boxes (middle column) -----------------------------------
+# ---- WORKFLOW boxes (middle column) -----------------------------------
 # One-time preprocessing
 add_box(ax, 0.36, 0.86, 0.30, 0.05,
         "Crustal-thickness mohometry\n(Zhou et al. 2025, ML on 66 features)",
@@ -252,11 +252,6 @@ ax.text(0.5, 0.02,
         ha="center", fontsize=8.5, style="italic", color="#444")
 
 plt.tight_layout()
-# Publication-named output goes straight into PAPER_FIG_DIR, mirroring
-# the convention used by make_sample_distribution_figure.py and friends.
-out_png  = FIG_DIR    / "Fig01_methodology_flowchart.png"
-mirror   = FIGURES_DIR / "methodology_flowchart.png"
+out_png  = FIG_DIR    / "methodology_flowchart_v1.png"
 plt.savefig(out_png, dpi=180, bbox_inches="tight")
-plt.savefig(mirror,  dpi=180, bbox_inches="tight")
 print(f"wrote {out_png}")
-print(f"wrote {mirror}")

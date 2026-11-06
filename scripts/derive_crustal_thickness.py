@@ -51,12 +51,13 @@ USAGE
                                                          # 500 Ma)
 
 OUTPUTS
-    data/corrected_merdith_geochem/<age>Ma_crustal_thickness_SW.nc
+    CORRECTED_DIR/<age>Ma_crustal_thickness_SW.nc
         lat, lon  (f4)   paleo-coordinate axes
         z_c       (f4)   crustal thickness in km (NaN over ocean)
         h_m       (f4)   M_corrected echoed back (m) for traceability
         continent_mask   (i1)
-    Figures/Fig11_derived_crustal_thickness.png   (--figure only)
+    FIGURES_DIR/derived_crustal_thickness.{png,pdf}   (--figure only; Fig. 16 of the paper, numbered by
+                                                     build_all_figures.sh)
 =============================================================================
 """
 from __future__ import annotations
@@ -67,7 +68,7 @@ import netCDF4 as nc
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, PAPER_FIG_DIR
+from paths_scotese import CORRECTED_DIR, OUTPUT_DIR, FIGURES_DIR
 
 # ---------------------------------------------------------------------------
 # Airy-isostasy constants, taken from the LithoRef18 reference column
@@ -218,11 +219,14 @@ def process_one(age_ma: int):
 # matplotlib + cartopy)
 # ---------------------------------------------------------------------------
 def make_preview_figure(ages=(50, 100, 200, 300, 400, 500)):
+    """Six-panel figure of the derived crustal thickness (the paper's Fig. 16). No title: the caption carries it.
+    Panels are lettered with their age; the script stops if any two text boxes overlap."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import matplotlib.colors as mcolors
     import cartopy.crs as ccrs
+    from figure_checks import text_collisions
 
     proj = ccrs.Robinson()
     norm = mcolors.Normalize(vmin=20, vmax=70)
@@ -231,7 +235,7 @@ def make_preview_figure(ages=(50, 100, 200, 300, 400, 500)):
     fig, axes = plt.subplots(3, 2, figsize=(12, 10),
                              subplot_kw={"projection": proj})
     pcm = None
-    for ax, t in zip(axes.flat, ages):
+    for k, (ax, t) in enumerate(zip(axes.flat, ages)):
         f = CORRECTED_DIR / f"{int(t)}Ma_crustal_thickness_SW.nc"
         if not f.exists():
             process_one(t)
@@ -250,26 +254,27 @@ def make_preview_figure(ages=(50, 100, 200, 300, 400, 500)):
         ax.contour(LON2D, LAT2D, (h_m >= 0).astype(float),
                    levels=[0.5], colors="black", linewidths=0.4,
                    transform=ccrs.PlateCarree())
-        ax.set_title(f"{t} Ma", fontsize=11)
         ax.gridlines(lw=0.25, color="grey", alpha=0.4)
+        ax.text(0.0, 1.02, f"({'abcdef'[k]}) {t} Ma", transform=ax.transAxes, ha="left", va="bottom",
+                fontsize=13, fontweight="bold")
 
     cax = fig.add_axes([0.22, 0.05, 0.56, 0.018])
     cb = fig.colorbar(pcm, cax=cax, orientation="horizontal", extend="both")
-    cb.set_label("Derived crustal thickness z_c  (km)", fontsize=10)
-    fig.suptitle(
-        f"Derived crustal thickness from Airy isostasy on corrected S&W18 elevation"
-        f"\n(z₀={Z0_KM:g} km, ρ_c={RHO_C:g}, ρ_m={RHO_M:g}, ρ_w={RHO_W:g} kg/m³)",
-        fontsize=12, y=0.98
-    )
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.10,
-                        hspace=0.18, wspace=0.05)
+    cb.set_label("Derived crustal thickness (km)", fontsize=12)
+    cb.ax.tick_params(labelsize=11)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.95, bottom=0.10,
+                        hspace=0.20, wspace=0.05)
+    bad = text_collisions(fig)
+    if bad:
+        raise SystemExit(f"overlapping text in the crustal thickness figure: {bad}")
 
-    out_dir = PAPER_FIG_DIR
+    out_dir = FIGURES_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_png = out_dir / "Fig11_derived_crustal_thickness.png"
-    fig.savefig(out_png, dpi=180, bbox_inches="tight")
+    out_png = out_dir / "derived_crustal_thickness.png"
+    fig.savefig(out_png, dpi=300, bbox_inches="tight")
+    fig.savefig(out_png.with_suffix(".pdf"), dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print(f"wrote {out_png}")
+    print(f"wrote {out_png} (and .pdf)")
     return out_png
 
 
@@ -282,10 +287,10 @@ def main():
     p.add_argument("age", nargs="?", type=int,
                    help="single slice age in Ma (omit + use --all for all slices)")
     p.add_argument("--all", action="store_true",
-                   help="process every corrected NetCDF in data/corrected_merdith_geochem/")
+                   help="process every corrected NetCDF in CORRECTED_DIR (data/corrected/)")
     p.add_argument("--figure", action="store_true",
                    help="also build the 6-panel preview figure "
-                        "(Figures/Fig11_derived_crustal_thickness.png)")
+                        "(FIGURES_DIR/derived_crustal_thickness.png)")
     p.add_argument("--ages", type=int, nargs="+",
                    help="figure-only: choose your own six ages "
                         "(default: 50 100 200 300 400 500)")

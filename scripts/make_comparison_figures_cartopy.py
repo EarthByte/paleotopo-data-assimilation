@@ -31,10 +31,11 @@ pseudocylindrical to Winkel-Tripel available without GMT).  Fixed cpt:
     elevation  : terrain, −4000 … +4000 m, end-extension arrows
     Δz         : RdBu_r,  ±2000 m, end-extension arrows
 
-OUTPUT  (Figures/)
-    Fig05a_SW_comparison_500-400Ma.png
-    Fig05b_SW_comparison_300-200Ma.png
-    Fig05c_SW_comparison_100-50Ma.png
+OUTPUT  (FIGURES_DIR)
+    cartopy_SW_comparison_500-400Ma.png
+    cartopy_SW_comparison_300-200Ma.png
+    cartopy_SW_comparison_100-50Ma.png
+    (a preview; the paper's Fig. 5 is drawn by esr_revision_maps.py)
 
 (A pyGMT version for publication-grade Winkel-Tripel rendering is in
 `make_comparison_figures.py`; run that locally where GMT is installed.)
@@ -53,23 +54,20 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
+from paths_scotese import CORRECTED_DIR, FIGURES_DIR
 import assimilate_scotese as A
 from sw_io import nearest_cell_index
 PROJ_ROOT = HERE.parent
-# Paper-numbered output goes to Figures/.  The pyGMT version of the
-# same figure (make_comparison_figures.py) writes its own Fig05a/b/c PNGs
-# straight to Figures/ via the build script — keeping these here too
-# means either renderer leaves the figures in their final home.
-FIG_DIR = PAPER_FIG_DIR
+# Previews go to FIGURES_DIR; the paper's Fig. 5 is drawn by esr_revision_maps.py.
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 ELEV_NORM = mcolors.TwoSlopeNorm(vmin=-4000, vcenter=0, vmax=4000)
 DELTA_NORM = mcolors.TwoSlopeNorm(vmin=-2000, vcenter=0, vmax=2000)
 
-PAIRS = [(500, 400, "Fig05a"),
-         (300, 200, "Fig05b"),
-         (100,  50, "Fig05c")]
+PAIRS = [(500, 400, "cartopy"),
+         (300, 200, "cartopy"),
+         (100,  50, "cartopy")]
 
 
 def load(t):
@@ -246,7 +244,7 @@ def make_one(age_L, age_R, basename):
 def main():
     for age_L, age_R, basename in PAIRS:
         make_one(age_L, age_R, basename)
-    print("\nDone.  Three figures in Figures/.")
+    print(f"\nDone.  Three figures in {FIG_DIR}.")
 
 
 if __name__ == "__main__":

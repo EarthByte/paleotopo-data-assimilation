@@ -42,7 +42,7 @@ INPUTS
     paths_scotese.CSV_PATH                                  (geochem CSV)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python build_summary_stats_scotese.py
 
 DEPENDENCIES

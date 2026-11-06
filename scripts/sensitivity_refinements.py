@@ -19,13 +19,16 @@ declustered sample count) and produces a comparison figure suitable
 for the paper supplementary.
 
 OUTPUTS
-    <CORRECTED_DIR>/sensitivity_refinements.csv   (data/corrected)
-    Figures/Fig10_sensitivity_refinements.png
+    OUTPUT_DIR/tables/sensitivity_refinements.csv
+    FIGURES_DIR/sensitivity_refinements.{png,pdf} (Fig. S4; build_all_figures.sh gives it its number); panels
+    lettered, no title,
+    refused if any text overlaps (figure_checks.text_collisions)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python sensitivity_refinements.py                  # six default ages
     python sensitivity_refinements.py --ages 50 100 200 400 540
+    python sensitivity_refinements.py --plot-only      # redraw from the CSV
 
 Runtime: ~5 ages × 5 configs × ~2 s/slice ≈ 1 minute.
 =============================================================================
@@ -42,28 +45,29 @@ import matplotlib.pyplot as plt
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import assimilate_scotese as A
-from paths_scotese import CORRECTED_DIR, PAPER_FIG_DIR
+from paths_scotese import FIGURES_DIR, OUTPUT_DIR
+from figure_checks import text_collisions
 PROJ_ROOT = HERE.parent
-FIG_DIR = PAPER_FIG_DIR
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Configuration matrix
 # ---------------------------------------------------------------------------
 CONFIGS = [
-    ("Default (all refinements on)",
+    ("Product (all refinements on)",
      dict(TEMPORAL_KERNEL="triangular", N_MIN_P=3,  N_FULL_P=30, PROVINCE_POOLING=True),
      "#1f77b4"),
-    ("(1) No temporal kernel",
+    ("No temporal kernel (uniform weights)",
      dict(TEMPORAL_KERNEL="uniform",    N_MIN_P=3,  N_FULL_P=30, PROVINCE_POOLING=True),
      "#ff7f0e"),
-    ("(2,3) Hard N=30 threshold (no shrinkage)",
+    ("Hard threshold N = 30 (no shrinkage)",
      dict(TEMPORAL_KERNEL="triangular", N_MIN_P=30, N_FULL_P=30, PROVINCE_POOLING=True),
      "#2ca02c"),
-    ("(4) No province pooling",
+    ("No province pooling",
      dict(TEMPORAL_KERNEL="triangular", N_MIN_P=3,  N_FULL_P=30, PROVINCE_POOLING=False),
      "#d62728"),
-    ("All refinements off (legacy)",
+    ("All four off",
      dict(TEMPORAL_KERNEL="uniform",    N_MIN_P=30, N_FULL_P=30, PROVINCE_POOLING=False),
      "#7f7f7f"),
 ]
@@ -87,7 +91,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--ages", type=int, nargs="+", default=DEFAULT_AGES,
                    help="ages (Ma) to test (default: 50 100 200 300 400 500)")
+    p.add_argument("--plot-only", action="store_true", help="redraw the figure from the CSV")
     args = p.parse_args()
+    out_csv = OUTPUT_DIR / "tables" / "sensitivity_refinements.csv"
+    if args.plot_only:
+        plot(pd.read_csv(out_csv))
+        return
 
     # Stash original config so we can restore it
     original_cfg = _snapshot_config()
@@ -126,44 +135,43 @@ def main():
             sys.exit(f"'{label}' is identical to Default at every age: the toggle did not reach "
                      "assimilate_scotese. Nothing written.")
 
-    # ----------------------------------------------------------------------
-    # Save CSV
-    # ----------------------------------------------------------------------
     df = pd.DataFrame(rows)
-    out_csv = CORRECTED_DIR / "sensitivity_refinements.csv"
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_csv, index=False)
     print(f"wrote {out_csv}")
+    plot(df)
 
-    # ----------------------------------------------------------------------
-    # Plot
-    # ----------------------------------------------------------------------
+
+def plot(df):
     metrics = [
-        ("bias_after_m",  "Sample bias after correction (m)"),
-        ("rms_after_m",   "Sample-residual RMS after correction (m)"),
-        ("p99_after_m",   "p99 land elevation after correction (m)"),
-        ("delta_rms_m",   "Δz RMS over continent (m)"),
+        ("bias_after_m", "sample bias after correction (m)"),
+        ("rms_after_m", "sample RMS after correction (m)"),
+        ("p99_after_m", "99th percentile of land elevation (m)"),
+        ("delta_rms_m", "RMS of \u0394z over the continents (m)"),
     ]
-    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5))
-    for ax, (metric_col, metric_label) in zip(axes.flat, metrics):
-        for label, cfg, color in CONFIGS:
+    plt.rcParams.update({"font.size": 10})
+    fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+    for k, (ax, (col, lab)) in enumerate(zip(axes.flat, metrics)):
+        for label, _, color in CONFIGS:
             sub = df[df["config"] == label].sort_values("t_Ma")
-            ls = "-" if "Default" in label else (":" if "legacy" in label else "--")
-            lw = 2.2 if "Default" in label else 1.4
-            ax.plot(sub["t_Ma"], sub[metric_col], "o" + ls,
-                    color=color, lw=lw, ms=5, label=label)
-        ax.set_xlabel("Age (Ma)")
-        ax.set_ylabel(metric_label, fontsize=10)
+            first = label == CONFIGS[0][0]
+            ls = "-" if first else (":" if label == CONFIGS[-1][0] else "--")
+            ax.plot(sub["t_Ma"], sub[col], "o" + ls, color=color, lw=2.2 if first else 1.4, ms=5, label=label)
+        ax.set_xlabel("age (Ma)")
+        ax.set_ylabel(lab)
         ax.invert_xaxis()
         ax.grid(True, alpha=0.3, lw=0.5)
-    # Single legend at the top
+        ax.text(-0.13, 1.03, "abcd"[k], transform=ax.transAxes, fontsize=13, fontweight="bold", va="bottom")
     handles, labels = axes[0, 0].get_legend_handles_labels()
-    plt.tight_layout(rect=(0, 0, 1, 0.93))
-    fig.legend(handles, labels, loc="upper center", ncol=3, fontsize=9,
-               bbox_to_anchor=(0.5, 1.0), frameon=True)
-
-    out_png = FIG_DIR / "Fig10_sensitivity_refinements.png"
-    plt.savefig(out_png, dpi=180, bbox_inches="tight")
-    print(f"wrote {out_png}")
+    fig.tight_layout(rect=(0, 0, 1, 0.90))
+    fig.legend(handles, labels, loc="upper center", ncol=3, fontsize=9.5, bbox_to_anchor=(0.5, 1.0), frameon=False)
+    bad = text_collisions(fig)
+    if bad:
+        raise SystemExit(f"[sensitivity] overlapping text {bad[:6]}")
+    for ext in ("png", "pdf"):
+        fig.savefig(FIG_DIR / f"sensitivity_refinements.{ext}", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"wrote {FIG_DIR / 'sensitivity_refinements'}.png/.pdf (text-collision check passed)")
 
 
 if __name__ == "__main__":

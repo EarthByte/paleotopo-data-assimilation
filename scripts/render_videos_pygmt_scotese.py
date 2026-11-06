@@ -19,12 +19,12 @@ PER-FRAME LAYOUT
     - elevation cpt: globe, range −4000..+4000 m (matches Fig 5 comparison)
     - delta cpt:     polar, range −2000..+2000 m
     - plate-boundary topology overlay in DELTA mode only, drawn in BLACK
-      (matches the Merdith delta video).  The S&W plate model only
+      The S&W plate model only
       resolves topologies for ages ≲ 100 Ma — `plate_model_utils_scotese
       .topology_lines(t)` returns empty for older slices and the
       overlay silently degrades to nothing.  Elevation / original /
       elevation_samples modes carry no overlay.
-    - age annotation TOP-LEFT (matches Merdith convention)
+    - age annotation TOP-LEFT
     - 200 dpi PNG → libx264 yuv420p MP4
 
 INPUT
@@ -69,7 +69,7 @@ FRAME_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Plate-boundary topology overlay is drawn ONLY on the delta video,
-# in black, to match the Merdith delta convention.  Setting False
+# in black.  Setting False
 # disables the overlay completely (e.g. if pygplates isn't installed).
 #
 # Disabled: the S&W plate model only resolves topologies for ages
@@ -234,6 +234,41 @@ def _grey_centre_polar(lo, hi, path="delta_polar_grey.cpt"):
     return path
 
 
+# Support layer (the grids' support_km variable): on the corrected-elevation movies a white veil over land the
+# correction does not reach (beyond 500 km of the nearest declustered observation, where the corrected grid is the
+# input grid; a lighter veil where the residual kernel is tapered, 250-500 km); on the delta movie the 500 km line.
+# Grids without the variable are drawn without it. --no-support switches it off.
+SUPPORT_LAYER = True
+SUPPORT_CLASSES_KM = (250.0, 500.0)
+
+
+def _support_overlay(fig, ds, lat, lon, mode, proj, region):
+    if not SUPPORT_LAYER or "support_km" not in ds:
+        return
+    sup = ds["support_km"].values.astype(float)
+    dist = np.where(np.isfinite(sup), sup, np.inf)
+    if mode in ("elevation", "elevation_samples"):
+        # tinted, not pure white: GMT draws a CPT of pure greys as a one-channel image and then paints NaN cells
+        # instead of leaving them transparent
+        with open("support_veil.cpt", "w") as fh:
+            fh.write("0 255/255/253 3 255/255/253\nN 127/127/127\n")
+        land = ds["continent_mask"].values.astype(bool) & (ds["M_corrected"].values >= 0)
+        d0, d1 = SUPPORT_CLASSES_KM
+        for lo, hi, transparency in ((d0, d1, 75), (d1, np.inf, 50)):
+            v = np.where(land & (dist > lo) & (dist <= hi), 1.0, np.nan).astype(np.float32)
+            da = make_xr_dataarray(v, lat, lon)
+            da.gmt.registration = 1
+            da.gmt.gtype = 1
+            fig.grdimage(grid=da, projection=proj, region=region, cmap="support_veil.cpt",
+                         nan_transparent=True, transparency=transparency)
+        Path("support_veil.cpt").unlink()
+    elif mode == "delta":
+        da = make_xr_dataarray(np.where(np.isfinite(dist), dist, 1.0e4).astype(np.float32), lat, lon)
+        da.gmt.registration = 1
+        da.gmt.gtype = 1
+        fig.grdcontour(grid=da, projection=proj, region=region, levels=[SUPPORT_CLASSES_KM[1]], pen="0.5p,gray20,-")
+
+
 def render_frame(t: int, mode: str, frame_path: Path):
     """Render one frame. mode ∈ {'elevation', 'original', 'delta', 'elevation_samples'}."""
     ds = load_grid_xr(t)
@@ -244,8 +279,7 @@ def render_frame(t: int, mode: str, frame_path: Path):
     elev_step = _nice_step(elev_hi - elev_lo)
     d_lo, d_hi = DATA_RANGE["delta"]
     d_step = _nice_step(d_hi - d_lo)
-    # Note: per-frame top titles were removed in 2026-05-26 — the only
-    # remaining text annotation is the time stamp in the upper-left
+    # The frames carry no titles: the only text annotation is the time stamp in the upper-left
     # corner of the map.  `cb_label` is still ASCII-only because
     # Ghostscript 10.x doesn't define the ISOLatin1+_Encoding GMT emits
     # for non-ASCII glyphs (Greek delta, true minus, plus-minus).
@@ -308,6 +342,7 @@ def render_frame(t: int, mode: str, frame_path: Path):
                   background=True, output="paleo.cpt")
     fig.grdimage(grid=da, projection=proj, region=region,
                  cmap="paleo.cpt", nan_transparent=True)
+    _support_overlay(fig, ds, lat, lon, mode, proj, region)
 
     # No coastline contour on the videos — at 1° / 5 Myr the contour
     # outlines pixel-edge artefacts that draw the eye away from the
@@ -316,7 +351,7 @@ def render_frame(t: int, mode: str, frame_path: Path):
     cont_mask = ds["continent_mask"].values.astype(bool)
 
     # Plate-boundary topology overlay in DELTA mode only, drawn in
-    # BLACK to match the Merdith delta video.  The S&W plate model
+    # BLACK.  The S&W plate model
     # only resolves topologies for ages ≲ 100 Ma — `topology_lines`
     # returns empty for older slices and the overlay silently
     # degrades to nothing.  Elevation modes carry no overlay.
@@ -367,8 +402,7 @@ def render_frame(t: int, mode: str, frame_path: Path):
     # indicating the data extends past the fixed ±4000 m cpt range.
     fig.colorbar(projection=proj, region=region, cmap="paleo.cpt",
                  frame=[f'x+l"{cb_label}"'], position="JBC+w12c/0.3c+o0/1c+h+e")
-    # Age stamp in the upper-left corner — matches the Merdith pyGMT
-    # convention.  `position="TL"` anchors at the top-left of the map
+    # Age stamp in the upper-left corner.  `position="TL"` anchors at the top-left of the map
     # bounding box, `offset` nudges 0.15 cm LEFT and 0.5 cm DOWN (GMT
     # "+x is right, +y is up") so the stamp sits just inside the
     # upper-left of the map, below the frame border.  History:
@@ -411,6 +445,8 @@ def main():
                    default=["elevation", "delta", "original", "elevation_samples"],
                    choices=["elevation", "delta", "original", "elevation_samples"])
     p.add_argument("--keep-frames", action="store_true")
+    p.add_argument("--no-support", action="store_true",
+                   help="leave out the support layer (veil beyond 250 / 500 km; 500 km line on the delta movie)")
     p.add_argument("--force", action="store_true",
                    help="wipe cached per-frame PNGs (under video_frames_pygmt_SW/<mode>/) "
                         "before rendering. Only matters when --keep-frames is set or a "
@@ -428,6 +464,8 @@ def main():
             ages = sorted(all_ages, reverse=True)
 
     print(f"Scanning {len(ages)} NetCDFs to derive cpt range from actual data …")
+    global SUPPORT_LAYER
+    SUPPORT_LAYER = not args.no_support
     compute_data_range(ages, args.modes)
 
     for mode in args.modes:

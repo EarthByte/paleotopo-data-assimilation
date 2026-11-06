@@ -26,7 +26,7 @@ the rotated dyntopo grids is rendered (0..250 Ma by default; that's the
 Scotese ↔ Merdith plate-motion convergence window).
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python add_dyntopo_to_corrected_scotese.py --dyntopo-dir <dyntopo>
     python render_corrected_plus_dyntopo_video.py                    # all three videos
     python render_corrected_plus_dyntopo_video.py --modes combined dyntopo

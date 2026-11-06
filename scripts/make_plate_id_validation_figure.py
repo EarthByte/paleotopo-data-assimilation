@@ -16,7 +16,8 @@ reconstruction step:
       with a 25% warning threshold.
 
 OUTPUT
-    Figures/Fig04_plate_id_validation.png
+    FIGURES_DIR/plate_id_validation_v1.png (a diagnostic; the paper's Fig. 3 is drawn by
+    esr_revision_figures.py fig3)
 =============================================================================
 """
 from __future__ import annotations
@@ -33,12 +34,12 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CSV_PATH, CORRECTED_DIR, PAPER_FIG_DIR
+from paths_scotese import CSV_PATH, CORRECTED_DIR, FIGURES_DIR
 import assimilate_scotese as A
 from sample_reconstruct_scotese import ScoteseSampleReconstructor
 
 PROJ_ROOT = HERE.parent
-FIG_DIR = PAPER_FIG_DIR
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -166,7 +167,7 @@ def main():
     ax_c.legend(loc="upper left", fontsize=9, framealpha=0.95)
 
     plt.tight_layout()
-    out = FIG_DIR / "Fig04_plate_id_validation.png"
+    out = FIG_DIR / "plate_id_validation_v1.png"
     plt.savefig(out, dpi=180, bbox_inches="tight")
     print(f"  wrote {out}")
 

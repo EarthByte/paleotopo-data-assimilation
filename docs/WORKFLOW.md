@@ -1,9 +1,8 @@
 # Workflow — Scotese & Wright assimilation, end-to-end
 
 End-to-end walkthrough for the standalone S&W workflow.  Assumes:
-- the repo has been cloned to `~/Documents/Software/Paleotopo_data_assimilation/`,
-- the S&W PaleoDEMs and revised plate-model files are in `data/`,
-- the geochem CSV is in `data/inputs/`,
+- the repo has been cloned to `paleotopo-data-assimilation/`,
+- the Zenodo archive has been extracted into `data/` (S&W PaleoDEMs, plate model, geochem CSV; see `data/README.md`),
 - Python and the pyGPlates / cartopy / pygmt / ffmpeg dependencies are installed.
 
 If anything below references a path or value you want to change, edit
@@ -12,7 +11,7 @@ If anything below references a path or value you want to change, edit
 ## 0. Verify your environment
 
 ```bash
-cd ~/Documents/Software/Paleotopo_data_assimilation/scripts
+cd paleotopo-data-assimilation/scripts
 python paths_scotese.py
 ```
 
@@ -27,7 +26,7 @@ which gmt ffmpeg
 
 ## 1. Conceptual overview
 
-The pipeline operates one age-slice at a time.  For each age *t*:
+The workflow operates one age-slice at a time.  For each age *t*:
 
 ```
                                             ┌─────────────────────┐
@@ -58,7 +57,7 @@ python assimilate_scotese.py --all
 Per-slice runtime is 1–2 s; full S&W sweep (107 ages) ≈ 4 min.  Output
 NetCDFs go to `data/corrected/<age>Ma_corrected_SW.nc`.
 
-The pipeline is **idempotent** — re-running `--all` skips slices whose
+The workflow is **idempotent** — re-running `--all` skips slices whose
 NetCDF already exists.  Add `--force` to overwrite.
 
 To run a subset:
@@ -99,7 +98,27 @@ Three figures land in `outputs/figures/`:
 |--------|---------------|
 | `SW_full_sweep_diagnostics.png` | 4-panel time-series: p99 land elevation, Δ RMS / max, input + corrected hypsometric heatmaps |
 | `SW_hypsometry_selected_ages.png` | overlaid corrected hypsometric curves at 8 selected ages vs Earth-modern |
-| `SW_metrics_by_era.png` | per-era box plots of bias, RMS, p99, Δz RMS — useful for paper figures |
+| `SW_metrics_by_era.png` | per-era box plots of bias, RMS, p99, Δz RMS |
+
+These are Figs. 6, 7 and 13 of the paper.
+
+### Support layer, validation and the paper's figures
+
+```bash
+python esr_revision_diagnostics.py      # support_km.nc, declustered.csv, per_age.csv in outputs/esr_revision/
+python esr_revision_regions.py all      # Figs. 8-12, Tables S4-S8 (needs pyGMT)
+```
+
+`esr_revision_diagnostics.py` re-runs every age in memory, checks that the
+run reproduces the grid in `data/corrected/` to 1 m, and writes the support
+layer (distance to the nearest declustered observation), the declustered
+observations with their in-sample residuals, and the area above 2 and 3 km
+of every age. `esr_revision_regions.py` scores the input and corrected
+grids against the independent paleoelevation records in
+`data/independent_records/` (methods independent of igneous geochemistry
+only) and draws the five regional figures. `../build_all_figures.sh` runs
+every figure and table script of the paper and numbers the results in
+`Figures/`; the README lists which script makes which figure.
 
 ## 5. Render videos
 
@@ -138,7 +157,7 @@ narrative angle:
 |--------|-------------------|
 | `n_decluster` | Declustered samples the slice uses, after samples on the prior's sea are dropped.  Medians: 160 in the Cenozoic, 100 in the Mesozoic, 23 in the Palaeozoic (13–41 in the Cambrian).  Below ~30 the province rescaling rarely reaches full weight and the correction is mostly the residual kernel near the samples. |
 | `n_sea_sited` | Declustered samples dropped because the prior puts their cell at or below sea level. |
-| `bias_before_m` / `bias_after_m` | The kinematic prior's amplitude bias against the geochem evidence.  Positive ⇒ model is too low.  Reduction from before → after is the pipeline's main numerical claim. |
+| `bias_before_m` / `bias_after_m` | The kinematic prior's amplitude bias against the geochem evidence.  Positive ⇒ model is too low.  Reduction from before → after is the workflow's main numerical claim. |
 | `rms_before_m` / `rms_after_m` | Sample-to-grid scatter.  Always reduces less than the bias because the residual kernel deliberately doesn't try to fit each cluster to zero error — fitting noise is bad practice. |
 | `land_corr_p99_m` | Top of the corrected map.  Compare against ~4 km Earth-modern reference.  Drops in data-sparse intervals are physically reasonable, not artefacts. |
 | `delta_rms_m`, `delta_max_m` | Correction magnitude per slice.  Bounded by the 2 km cap.  Spikes correspond to large prior errors (often hothouse / orogen-rich intervals). |

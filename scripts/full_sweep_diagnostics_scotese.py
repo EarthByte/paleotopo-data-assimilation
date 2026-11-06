@@ -8,7 +8,7 @@ corrected NetCDFs in paths_scotese.CORRECTED_DIR.  Companion to
 build_summary_stats_scotese.py:  stats produces the CSV/markdown, this
 script produces the figures.
 
-OUTPUTS  (in paths_scotese.OUTPUT_DIR)
+OUTPUTS  (in paths_scotese.FIGURES_DIR; Figs. 6, 7 and 13 of the paper)
 
   SW_full_sweep_diagnostics.png        4-panel:
       (1) 99th-percentile land elevation through time, input vs corrected
@@ -29,7 +29,7 @@ INPUT
         (produced by build_summary_stats_scotese.py)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python full_sweep_diagnostics_scotese.py
 
 DEPENDENCIES
@@ -65,12 +65,12 @@ ERA_BOUNDS = [(0, 66, "Cenozoic", "#fae6c8"),
               (252, 540, "Paleozoic", "#cfd9e6")]
 
 
-def add_era_shading(ax, x_invert=True):
+def add_era_shading(ax, x_invert=True, label_y=0.97):
     """Shade era backgrounds on a time-axis plot.  Assumes x is age (Ma)."""
     for lo, hi, name, col in ERA_BOUNDS:
         ax.axvspan(lo, hi, color=col, alpha=0.5, zorder=0)
-        ax.text((lo + hi) / 2, 1.02, name, transform=ax.get_xaxis_transform(),
-                ha="center", va="bottom", fontsize=8, color="black")
+        ax.text((lo + hi) / 2, label_y, name, transform=ax.get_xaxis_transform(),
+                ha="center", va="top", fontsize=11, color="black")
 
 
 def hyp_curve(arr, mask, n=200, land_only: bool = False):
@@ -159,8 +159,21 @@ def make_gmt_dem4_cmap(top_m: float = 4000.0):
     return mcolors.LinearSegmentedColormap("gmt_dem4", cdict, N=512)
 
 
+def _letter(ax, k):
+    ax.text(-0.06, 1.02, f"({'abcdefgh'[k]})", transform=ax.transAxes, ha="right", va="bottom",
+            fontsize=14, fontweight="bold")
+
+
+def _check(fig, name):
+    from figure_checks import text_collisions
+    bad = text_collisions(fig)
+    if bad:
+        raise SystemExit(f"overlapping text in {name}: {bad}")
+
+
 def main():
     df = pd.read_csv(PER_SLICE_CSV).sort_values("t_Ma")
+    plt.rcParams.update({"font.size": 12})
     ages_h, H_orig, H_corr = build_hypsometric_heatmap_data()
 
     # -------- Figure 1: 4-panel temporal evolution
@@ -170,19 +183,19 @@ def main():
     ax = axes[0]
     ax.plot(df.t_Ma, df.land_orig_p99_m, label="S&W input", color="grey", lw=1.5)
     ax.plot(df.t_Ma, df.land_corr_p99_m, label="corrected", color="C3", lw=1.5)
-    ax.set_ylabel("99th-percentile land elev (m)")
-    ax.set_title("Top 1% of land elevation through time")
-    ax.invert_xaxis(); ax.grid(True, alpha=0.3); ax.legend()
-    add_era_shading(ax)
+    ax.set_ylabel("99th percentile of land elevation (m)")
+    ax.set_xlabel("age (Ma)")
+    ax.invert_xaxis(); ax.grid(True, alpha=0.3); ax.legend(loc="center left")
+    add_era_shading(ax); _letter(ax, 0)
 
     # (2) correction magnitude
     ax = axes[1]
     ax.plot(df.t_Ma, df.delta_rms_m, label="Δ RMS over continent", color="C0", lw=1.5)
     ax.plot(df.t_Ma, df.delta_max_m, label="Δ max", color="C2", lw=1, alpha=0.7)
     ax.set_ylabel("correction magnitude (m)")
-    ax.set_title("Correction magnitude through time")
-    ax.invert_xaxis(); ax.grid(True, alpha=0.3); ax.legend()
-    add_era_shading(ax)
+    ax.set_xlabel("age (Ma)")
+    ax.invert_xaxis(); ax.grid(True, alpha=0.3); ax.legend(loc="center left")
+    add_era_shading(ax, label_y=0.60); _letter(ax, 1)
 
     # (3, 4) — Continental hypsometry through time.  Land-only (z > 0);
     # 0-4000 m elevation scale; GMT dem4 colormap; values above the
@@ -196,8 +209,7 @@ def main():
                    extent=[ages_h.min(), ages_h.max(), 0, 1],
                    aspect="auto", cmap=dem4, norm=norm)
     ax.set_xlabel("age (Ma)"); ax.set_ylabel("cum. land area fraction")
-    ax.set_title("Continental hypsometry through time — S&W input (land only)")
-    ax.invert_xaxis()
+    ax.invert_xaxis(); _letter(ax, 2)
     fig.colorbar(im, ax=ax, fraction=0.05, label="elevation (m)", extend="max")
 
     ax = axes[3]
@@ -205,13 +217,13 @@ def main():
                    extent=[ages_h.min(), ages_h.max(), 0, 1],
                    aspect="auto", cmap=dem4, norm=norm)
     ax.set_xlabel("age (Ma)"); ax.set_ylabel("cum. land area fraction")
-    ax.set_title("Continental hypsometry through time — corrected (land only)")
-    ax.invert_xaxis()
+    ax.invert_xaxis(); _letter(ax, 3)
     fig.colorbar(im, ax=ax, fraction=0.05, label="elevation (m)", extend="max")
 
     plt.tight_layout()
+    _check(fig, "SW_full_sweep_diagnostics")
     out = FIGURES_DIR / "SW_full_sweep_diagnostics.png"
-    plt.savefig(out, dpi=140, bbox_inches="tight")
+    plt.savefig(out, dpi=300, bbox_inches="tight")
     print(f"wrote {out}")
 
     # -------- Figure 2: selected-age hypsometric curves (land only, 0-6000 m)
@@ -232,11 +244,12 @@ def main():
             [0,    50,   300,  800,  1500, 2500, 3500, 5500],
             "--", color="black", label="Earth (modern, land only)", lw=1.2)
     ax.set_xlabel("cum. land area fraction"); ax.set_ylabel("elevation (m)")
-    ax.grid(True, alpha=0.3); ax.legend(loc="upper left", fontsize=8)
+    ax.grid(True, alpha=0.3); ax.legend(loc="upper left", fontsize=11)
     ax.set_ylim(0, 6000)
     plt.tight_layout()
+    _check(fig, "SW_hypsometry_selected_ages")
     out = FIGURES_DIR / "SW_hypsometry_selected_ages.png"
-    plt.savefig(out, dpi=140, bbox_inches="tight")
+    plt.savefig(out, dpi=300, bbox_inches="tight")
     print(f"wrote {out}")
 
     # -------- Figure 3: per-era box plots
@@ -245,18 +258,21 @@ def main():
                ("bias_after_m",  "Bias after (m)"),
                ("rms_before_m",  "RMS before (m)"),
                ("rms_after_m",   "RMS after (m)"),
-               ("land_corr_p99_m", "Land p99 corrected (m)"),
+               ("land_corr_p99_m", "Land p99, corrected (m)"),
                ("delta_rms_m",   "Δz RMS (m)")]
     fig, axes = plt.subplots(2, 3, figsize=(14, 8))
     eras = ["Cenozoic", "Mesozoic", "Paleozoic"]
-    for ax, (col, label) in zip(axes.flat, metrics):
+    df = df[df.t_Ma > 0]                      # 0 Ma is the present-day bypass, not a corrected slice
+    for k, (ax, (col, label)) in enumerate(zip(axes.flat, metrics)):
         data = [df[df.era == e][col].dropna().values for e in eras]
-        ax.boxplot(data, labels=eras, showfliers=False)
-        ax.set_title(label, fontsize=11)
-        ax.grid(True, alpha=0.3)
+        ax.boxplot(data, tick_labels=eras,   # matplotlib >= 3.9 (labels= removed in 3.11)
+                   whis=(0, 100), showfliers=False)
+        ax.set_ylabel(label)
+        ax.grid(True, alpha=0.3); _letter(ax, k)
     plt.tight_layout()
+    _check(fig, "SW_metrics_by_era")
     out = FIGURES_DIR / "SW_metrics_by_era.png"
-    plt.savefig(out, dpi=140, bbox_inches="tight")
+    plt.savefig(out, dpi=300, bbox_inches="tight")
     print(f"wrote {out}")
 
 

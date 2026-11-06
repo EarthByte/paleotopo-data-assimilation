@@ -37,7 +37,7 @@ OUTPUTS  (in paths_scotese.OUTPUT_DIR)
        three-panel: corrected SW | corrected Merdith | difference
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python compare_workflows.py                     # all stats only
     python compare_workflows.py --map-ages 50 100 250 500
     python compare_workflows.py --merdith-dir /custom/path

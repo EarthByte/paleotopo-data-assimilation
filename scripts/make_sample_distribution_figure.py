@@ -1,6 +1,6 @@
 """
 =============================================================================
-make_sample_distribution_figure.py  —  Figure 2 of the Earth-Science Reviews paper
+make_sample_distribution_figure.py  —  Fig. 1 of the Earth-Science Reviews paper
 =============================================================================
 
 Four-panel figure characterising the geochemical sample database used in
@@ -14,10 +14,10 @@ the assimilation:
   (d) Per-province declustered sample counts, stratified by era.
 
 OUTPUT
-    Figures/Fig02_sample_distribution.png
+    FIGURES_DIR/sample_distribution.png (Fig. 1 of the paper; build_all_figures.sh gives it its number)
 
 USAGE
-    cd <project>/scripts_Scotese
+    cd <project>/scripts
     python make_sample_distribution_figure.py
 =============================================================================
 """
@@ -34,10 +34,10 @@ import cartopy.crs as ccrs
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from paths_scotese import CSV_PATH, PAPER_FIG_DIR
+from paths_scotese import CSV_PATH, FIGURES_DIR
 
 PROJECT_ROOT = HERE.parent
-FIG_DIR = PAPER_FIG_DIR
+FIG_DIR = FIGURES_DIR
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -52,11 +52,16 @@ def main():
     print("Loading geochem CSV …")
     df = pd.read_csv(CSV_PATH, low_memory=False)
     df = df.dropna(subset=["Lat", "Lon", "Age_Ma"]).copy()
-    # Restrict to the same Phanerozoic window the pipeline uses
+    # Restrict to the same Phanerozoic window the workflow uses
     df = df[(df["Age_Ma"] >= 0) & (df["Age_Ma"] <= 540)].reset_index(drop=True)
     print(f"  {len(df)} samples in 0–540 Ma")
 
+    plt.rcParams.update({"font.size": 12})
     fig = plt.figure(figsize=(13, 9.5))
+
+    def letter(ax, k, x=-0.02):
+        ax.text(x, 1.04, f"({'abcd'[k]})", transform=ax.transAxes, ha="left", va="bottom",
+                fontsize=14, fontweight="bold")
 
     # ----------------------- (a) global map -----------------------
     ax_a = fig.add_subplot(2, 2, 1, projection=ccrs.Robinson())
@@ -69,9 +74,8 @@ def main():
                       transform=ccrs.PlateCarree(), edgecolor="none")
     cbar = fig.colorbar(sc, ax=ax_a, orientation="horizontal",
                         fraction=0.05, pad=0.06)
-    cbar.set_label("sample age (Ma)", fontsize=9)
-    ax_a.set_title(f"(a) Present-day positions of {len(df):,} samples (0–540 Ma)",
-                   fontsize=11)
+    cbar.set_label("sample age (Ma)", fontsize=12)
+    letter(ax_a, 0)
 
     # ----------------------- (b) age histogram -----------------------
     ax_b = fig.add_subplot(2, 2, 2)
@@ -79,18 +83,18 @@ def main():
     n, edges, _ = ax_b.hist(df["Age_Ma"], bins=bins,
                             color="#3a6c9e", edgecolor="white", lw=0.5)
     ax_b.set_xlabel("sample age (Ma)"); ax_b.set_ylabel("samples per 10 Myr bin")
-    ax_b.set_title(f"(b) Sample density vs age", fontsize=11)
+    letter(ax_b, 1, x=-0.12)
     ax_b.invert_xaxis()
     ax_b.set_yscale("log"); ax_b.grid(True, alpha=0.3)
     # annotate era boundaries
     for boundary, name in [(66, "K-Pg"), (252, "P-Tr")]:
         ax_b.axvline(boundary, color="#444", lw=0.5, ls="--")
-        ax_b.text(boundary, 1.02, name, transform=ax_b.get_xaxis_transform(),
-                  ha="center", va="bottom", fontsize=8, color="#666")
+        ax_b.text(boundary - 4, 0.97, name, transform=ax_b.get_xaxis_transform(),
+                  ha="left", va="top", fontsize=11, color="#333")
 
     # ----------------------- (c) elevation calc schematic -----------------------
-    ax_c = fig.add_subplot(2, 2, 3); ax_c.set_axis_off()
-    def box(ax, x, y, w, h, txt, color="#cfd9e6", fs=9, bold=False):
+    ax_c = fig.add_subplot(2, 2, 3); ax_c.set_axis_off(); ax_c.set_xticks([]); ax_c.set_yticks([])
+    def box(ax, x, y, w, h, txt, color="#cfd9e6", fs=11, bold=False):
         from matplotlib.patches import FancyBboxPatch
         ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.012",
                                     facecolor=color, edgecolor="black", lw=0.8))
@@ -106,19 +110,19 @@ def main():
         color="#dcdcdc")
     arr(ax_c, 0.50, 0.80, 0.50, 0.72)
     box(ax_c, 0.05, 0.59, 0.90, 0.13,
-        "Machine-learning mohometry\n(random forest; Zhou et al. 2025)\n→ crustal thickness  +  uncertainty envelope",
+        "Machine-learning mohometry (Zhou et al., 2025)\n→ crustal thickness  +  uncertainty envelope",
         color="#cfd9e6")
     arr(ax_c, 0.50, 0.59, 0.50, 0.50)
     box(ax_c, 0.05, 0.32, 0.90, 0.18,
-        "Airy isostasy with 6 density models\n(Herzberg 0.08 / 0.23 / 0.38, Brown 2022,\nDavis 2009, Condie 2016)",
+        "Airy isostasy with 6 density models\n(Herzberg 0.08 / 0.23 / 0.38, Brown 2022,\nDavies 2009, Condie 2016)",
         color="#cfd9e6")
     arr(ax_c, 0.50, 0.32, 0.50, 0.24)
     box(ax_c, 0.05, 0.05, 0.90, 0.18,
         "Per-sample observed elevation z ± σ\n"
-        "σ² = σ²(ensemble spread) + σ²(thickness envelope) + σ²(quality)\n"
+        "σ² = σ²(ensemble spread) + σ²(thickness envelope)\n      + σ²(quality)\n"
         "  →  inverse-variance weight in the assimilation",
         color="#cfe6cf")
-    ax_c.set_title("(c) Per-sample elevation calculation", fontsize=11, pad=14)
+    letter(ax_c, 2, x=0.0)
 
     # ----------------------- (d) declustered counts by province × era -----------------------
     ax_d = fig.add_subplot(2, 2, 4)
@@ -139,12 +143,16 @@ def main():
     ax_d.set_ylabel("")
     ax_d.invert_yaxis()
     ax_d.grid(True, axis="x", alpha=0.3)
-    ax_d.legend(title="Era", fontsize=9, framealpha=0.9)
-    ax_d.set_title("(d) Sample count by tectonic province × era", fontsize=11)
+    ax_d.legend(title="Era", fontsize=11, framealpha=0.9)
+    letter(ax_d, 3, x=-0.30)
 
     plt.tight_layout()
-    out_png = FIG_DIR / "Fig02_sample_distribution.png"
-    plt.savefig(out_png, dpi=200, bbox_inches="tight")
+    from figure_checks import text_collisions
+    bad = text_collisions(fig)
+    if bad:
+        raise SystemExit(f"overlapping text in the sample-distribution figure: {bad}")
+    out_png = FIG_DIR / "sample_distribution.png"
+    plt.savefig(out_png, dpi=300, bbox_inches="tight")
     print(f"  wrote {out_png}")
 
 
